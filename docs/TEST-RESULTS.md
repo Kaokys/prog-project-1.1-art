@@ -43,6 +43,16 @@
 - Admin ยืนยัน paid → บันทึกเลขพัสดุ DEMO-TEST-123 → completed
 - Dashboard หลังสำเร็จ: ยอด 77 บาท, คำสั่งซื้อ 1, ส่วนแบ่งศิลปินก่อนส่วนลด 30 − commission 3 = 27 บาท
 
-## สิ่งที่ยังต้องตรวจหลัง Deploy
+## Vercel จริง — https://sillapa.vercel.app/
 
-ต้องตรวจ deployment รุ่นไฟล์ text บน URL จริง: runtime/imports, login, CRUD, logs และ workflow ห้ามอ้างข้อมูลถาวรบน Vercel แม้บางคำขอจะใช้ instance เดิม
+ตรวจรุ่นไฟล์ text แล้ว: bootstrap HTTP 200, storage=temporary_text, รูปตัวอย่างโหลดได้ และไม่มี error ขอ ART_STORAGE
+
+- API: Login ทั้ง admin/staff/customer และเรียก profile ด้วย cookie ได้
+- อัปโหลด JPG, ปฏิเสธราคา abc ฝั่งเซิร์ฟเวอร์, สร้าง/อ่าน/แก้/อนุมัติผลงาน, ค้นหา/เรียงราคา/แบ่งหน้า
+- Customer สั่งงานราคา 99.99 บาท ลด ART10 10.00 บาท + ค่าส่ง 50.00 บาท = **139.99 บาท**
+- แนบสลิปสาธิต → admin paid → shipped DEMO-TEXT-123 → completed; ยอด Dashboard ตรงกัน
+- ลบ pending artwork แล้วอ่านไม่ได้; ลบ sold artwork ได้ 409
+- Log มีรายการแก้ผลงาน; customer เข้า dashboard ได้ 403; staff เปิดออเดอร์ของ customer ได้ 404; logout ผ่าน
+- Browser: หน้าแรกโหลดแล้ว, Login admin ผ่านหน้าปกติได้, หน้า Dashboard แสดงยอด 139.99 บาท พร้อมข้อความบอกข้อมูลชั่วคราว
+
+ภาพหลักฐานอยู่ evidence/vercel-text-dashboard.png ในเครื่อง (ไม่ push) การตรวจครั้งนี้ยืนยัน workflow ภายใน instance ที่ทดสอบ **ไม่ใช่หลักฐานการเก็บข้อมูลถาวรหรือแชร์ข้อมูลระหว่าง instance** รุ่นนี้ไม่ใช้บริการ storage ภายนอกตามขอบเขตผู้ใช้
