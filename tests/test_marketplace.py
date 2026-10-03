@@ -176,6 +176,13 @@ class MarketplaceTests(unittest.TestCase):
         self.fails(503, lambda: self.app.read("bootstrap"))
         self.assertEqual(path.read_text(), "broken json")
 
+    def test_deleted_artist_does_not_break_admin_catalogue(self):
+        self.app.write("user_delete", {"id": "blue"}, self.admin)
+        self.assertFalse(any(a["artist_id"] == "blue" for a in self.app.read("catalogue")["items"]))
+        managed = self.app.read("catalogue", {"manage": "1"}, self.admin)
+        self.assertEqual(managed["total"], 6)
+        self.assertEqual(self.app.read("art", {"id": "art-1"}, self.admin)["art"]["artist_id"], "blue")
+
     def test_cli_exit_bad_input_no_traceback(self):
         env = os.environ | {"ART_LOCAL_DIR": self.temp.name, "PYTHONUTF8": "1"}
         result = subprocess.run([sys.executable, "main.py"], input="abc\n0\n", capture_output=True, text=True, encoding="utf-8", env=env, timeout=10)

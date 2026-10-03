@@ -14,8 +14,8 @@ def identifier():
     return secrets.token_hex(16)
 
 
-def find(rows, value, label="ข้อมูล"):
-    item = next((row for row in rows if row["id"] == value and not row.get("deleted")), None)
+def find(rows, value, label="ข้อมูล", include_deleted=False):
+    item = next((row for row in rows if row["id"] == value and (include_deleted or not row.get("deleted"))), None)
     if item is None:
         raise AppError(f"ไม่พบ{label}", 404)
     return item
@@ -56,7 +56,7 @@ def catalogue(data, query, user=None):
     else:
         items.reverse()
     for art in items:
-        artist = find(data["users"], art["artist_id"], "ศิลปิน")
+        artist = find(data["users"], art["artist_id"], "ศิลปิน", include_deleted=True)
         art["artist_name"], art["artist_avatar"] = artist["name"], artist["avatar"]
     return paginate(items, query)
 
@@ -116,7 +116,7 @@ class Marketplace:
         if action == "art":
             art = find(data["artworks"], query.get("id"), "ผลงาน")
             owner = user and (user["role"] == "admin" or user["id"] == art["artist_id"])
-            artist = find(data["users"], art["artist_id"])
+            artist = find(data["users"], art["artist_id"], include_deleted=True)
             if not owner and (art["status"] not in ("approved", "reserved", "sold") or not artist["active"] or artist["role"] != "staff"):
                 raise AppError("ไม่พบผลงาน", 404)
             return {"art": art, "artist": {"id": artist["id"], "name": artist["name"], "bio": artist["bio"], "avatar": artist["avatar"]}}
@@ -239,7 +239,7 @@ class Marketplace:
                         art["status"] = body["status"]
                         art["note"] = text(body.get("note", ""), "เหตุผล", 0, 500)
                     else:
-                        owner = find(data["users"], art["artist_id"])
+                        owner = find(data["users"], art["artist_id"], include_deleted=True)
                         art.update(art_values(data, body, owner, art))
                         art["status"] = "pending"
                 audit(data, user, action, "artwork", art["id"])
