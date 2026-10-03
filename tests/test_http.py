@@ -73,11 +73,11 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(self.request("/api?action=logout", raw=b"{}", mime="text/plain")[0], 415)
         self.assertEqual(self.request("/api?action=logout", raw=b"x" * 800001)[0], 413)
 
-    def test_serverless_missing_store_is_helpful(self):
+    def test_serverless_text_store_needs_no_connection(self):
         with patch.dict("os.environ", {"VERCEL": "1"}):
             status, headers, raw = self.request("/api?action=bootstrap")
-            self.assertEqual(status, 503)
-            self.assertIn("ART_STORAGE", raw.decode())
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(raw)["storage"], "temporary_text")
             self.assertNotIn(b"Traceback", raw)
 
     def test_server_rejects_invalid_artwork_fields_without_mutation(self):

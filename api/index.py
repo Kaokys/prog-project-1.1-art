@@ -40,8 +40,6 @@ class handler(BaseHTTPRequestHandler):
                 raise AppError("ข้อมูล session ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่", 400) from None
             token = cookies["art_session"].value if "art_session" in cookies else ""
             store = Storage()
-            if os.environ.get("VERCEL") and not store.remote:
-                raise AppError("กรุณาตั้ง ART_STORAGE=github และเชื่อม repo ข้อมูลใน Vercel", 503)
             app = Marketplace(store)
             if self.command == "GET":
                 if action == "media":

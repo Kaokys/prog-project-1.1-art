@@ -1,6 +1,6 @@
 # บทสาธิตระบบจริง
 
-ก่อนนำเสนอ เปิดเว็บด้วย START-WEB.cmd และเปิด Terminal ด้วย START-TERMINAL.cmd ใช้ข้อมูลตัวอย่างเท่านั้น ไม่โอนเงินจริง เปิด repo ข้อมูล private เพื่อชี้ JSON โดยไม่เปิด token
+ก่อนนำเสนอ เปิดเว็บด้วย START-WEB.cmd และเปิด Terminal ด้วย START-TERMINAL.cmd ใช้ข้อมูลตัวอย่างเท่านั้น ไม่โอนเงินจริง เปิด data/database.txt ด้วย Notepad เพื่อชี้ข้อมูลและ logs
 
 1. เปิดหน้าแรก → งานศิลปะ → ค้นหา/เลือกศิลปิน/เรียงราคา ชี้ว่าหน้าร้านเหมือนกันก่อนและหลัง Login
 2. Login staff `benjamin.blue@demo.local` → เพิ่มผลงาน → เลือก JPG/PNG → กรอกชื่อ เทคนิค ขนาด ราคา → ส่ง ต้องเป็น pending ยังไม่แสดงในหน้าร้าน
@@ -21,11 +21,11 @@
 - เมนู while และ for ในการตรวจตะกร้า รวมถึงเงื่อนไข and/or/not
 - ฟังก์ชันรับพารามิเตอร์และ return อย่างน้อย 6 ตัว พร้อมยกตัวอย่างเรียกจริง
 - list/dict/tuple/set ใช้ต่างกันอย่างไร
-- การอ่าน/เขียน JSON, atomic replace, try/except และไม่รีเซ็ต seed เมื่อเปิดใหม่
+- การอ่าน/เขียน text ที่จัดโครงสร้าง JSON, atomic replace, try/except และไม่รีเซ็ต seed เมื่อเปิดใหม่ในเครื่อง
 - session cookie กับการตรวจ role/ownership ที่เซิร์ฟเวอร์; frontend ซ่อนปุ่มอย่างเดียวไม่พอ
 - คำสั่งซื้อ reserve/sold, key กันส่งซ้ำ, transitions และยอดรวม
-- local storage JSON กับ private GitHub JSON ต่างกันอย่างไร; เหตุใด Vercel ต้องมี storage ภายนอก
+- ไฟล์ text ในเครื่องเก็บถาวร ส่วน Vercel ใช้พื้นที่ชั่วคราวที่อาจรีเซ็ตและแต่ละ instance อาจมีข้อมูลคนละชุด รุ่นนี้ไม่ใช้ storage ภายนอก
 
 ## ทดสอบก่อนวันจริง
 
-รัน python -m unittest discover -s tests -v และ python scripts/check_rubric.py ให้ผ่าน จากนั้นลองครบ workflow ด้วย browser จริงที่ใช้สาธิตบน Vercel หาก token หมดอายุ ต้องเปลี่ยนใน Vercel และ Redeploy ก่อนวันนำเสนอ
+รัน python -m unittest discover -s tests -v และ python scripts/check_rubric.py ให้ผ่าน จากนั้นลองครบ workflow ด้วย browser จริง หากต้องสาธิตการเก็บข้อมูลหลังปิดโปรแกรมให้ใช้ localhost ส่วน Vercel ใช้สาธิตเว็บออนไลน์โดยแจ้งข้อจำกัดพื้นที่ชั่วคราวให้ชัดเจน

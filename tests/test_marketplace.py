@@ -12,7 +12,7 @@ import zlib
 from pathlib import Path
 from unittest.mock import patch
 from marketplace import Marketplace, calculate_total
-from storage import ConflictError, Storage, StorageError
+from storage import Storage, StorageError
 from validation import AppError, boolean, image_payload, money, number
 
 
@@ -171,7 +171,7 @@ class MarketplaceTests(unittest.TestCase):
         with patch("storage.os.replace", side_effect=OSError()):
             self.fails(503, lambda: self.app.write("category_create", {"name": "Must not persist"}, self.admin))
         self.assertNotIn("Must not persist", self.app.read("bootstrap")["categories"])
-        path = Path(self.temp.name) / "database.json"
+        path = Path(self.temp.name) / "database.txt"
         path.write_text("broken json", encoding="utf-8")
         self.fails(503, lambda: self.app.read("bootstrap"))
         self.assertEqual(path.read_text(), "broken json")
@@ -231,7 +231,7 @@ print(json.dumps({"title":art["title"], "price":art["price"], "image":base64.b64
         self.assertEqual(result.returncode, 0)
         self.assertNotIn("Traceback", result.stdout + result.stderr)
         self.assertIn("ไฟล์ไม่ใช่รูป", result.stdout)
-        database = Path(self.temp.name) / "database.json"
+        database = Path(self.temp.name) / "database.txt"
         database.write_text("broken", encoding="utf-8")
         result = subprocess.run([sys.executable, "main.py"], input="3\n\n0\n", capture_output=True, text=True, encoding="utf-8", env=env, timeout=10)
         self.assertEqual(result.returncode, 0)

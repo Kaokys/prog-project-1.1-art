@@ -16,7 +16,7 @@
 | list/dict/tuple/set | list artworks/orders; dict user/session/address; tuple ROLES; set ids กันตะกร้าซ้ำและ transition ที่อนุญาต |
 | >= 2 Python modules | main, marketplace, storage, auth, validation, seed, server, console, api/index |
 | Standard Library only | ast, json, pathlib, urllib, http.server, hashlib, hmac, secrets, decimal, zlib, struct, threading, tempfile ฯลฯ; ไม่ใช้ pip packages |
-| Upload + persistence | storage.put_media/get_media, database.json; test_uploaded_art_survives_process_restart_and_deletion ปิด subprocess แล้วเปิดอีก process ตรวจ bytes รูป/ราคา/ชื่อเดิม |
+| Upload + persistence | storage.put_media/get_media, database.txt; test_uploaded_art_survives_process_restart_and_deletion ปิด subprocess แล้วเปิดอีก process ตรวจ bytes รูป/ราคา/ชื่อเดิมในเครื่อง |
 | try/except ทุก input/file boundary | main.ask/upload_file; storage.load/save/media; server static files; seed sample metadata; errors แปลงเป็นข้อความ |
 | ไม่มี business logic ที่ top level | แยกฟังก์ชันและคลาส main ใช้ if __name__ == '__main__' เรียก main |
 | ไม่เห็น Traceback | CLI จับ AppError/Exception; HTTP ส่ง JSON error ไม่ส่ง exception details; error ภาษาไทย |
@@ -30,12 +30,12 @@
 | Search/filter/sort/page | หน้า งานศิลปะ + max price + artist/category + sort + pagination; ชุดทดสอบใช้ limit=2 |
 | Dashboard | #portal ของ admin: completed revenue, orders, pending, users, artist sales |
 | Important edit logs | #logs: registration, uploads, profile, artwork, category, user, order, settings |
-| Vercel | api/index.py BaseHTTPRequestHandler, vercel.json, private GitHub data mode; การ deploy จริงต้องมี Environment Variables ตาม README |
+| Vercel | api/index.py BaseHTTPRequestHandler, vercel.json; ไม่ต้องเชื่อม storage หรือเพิ่ม env ใช้ไฟล์ text ชั่วคราวเฉพาะ instance จึงไม่รับประกันข้อมูลถาวรบน Vercel |
 
 ## กฎ Logic
 
 - ไม่เชื่อ total/role/price จาก browser; คำนวณจากข้อมูลผลงานที่บันทึก
-- ผลงานแต่ละชิ้นซื้อได้ครั้งเดียวในขณะที่ reserved/sold; atomic local update หรือ GitHub SHA retry
+- ผลงานแต่ละชิ้นซื้อได้ครั้งเดียวในขณะที่ reserved/sold ใน store เดียวกัน; atomic file update และ lock ใน process เดียวกัน
 - key สั่งซื้อซ้ำให้คืนออเดอร์เดิม ไม่สร้างซ้ำ
 - transition: pending_payment → payment_review → paid → shipped → completed; ไม่ข้ามขั้น
 - ยกเลิกได้ก่อน paid และคืน artwork เป็น approved
@@ -44,4 +44,4 @@
 - ART10 ลด 10% ปัดเศษเป็นสตางค์; ค่าส่ง 50 บาท ส่งฟรีหลังส่วนลด >= 1,000 บาท; ภาษีสาธิต 0 และระบุบนเว็บ
 - commission report แสดง 10% ของราคาผลงานก่อนส่วนลด ไม่อ้างว่าโอนรายได้จริง
 
-ผลตรวจล่าสุด: unittest **22 tests ผ่าน** และ AST **7 checks ผ่าน** ดู docs/TEST-RESULTS.md ส่วนการขึ้น Vercel ยังรอ Login และ Environment Variables; ยังไม่ถือว่าข้อนี้ผ่านจน deploy และทดสอบบน URL จริง
+ขอบเขตล่าสุดใช้ไฟล์ text อย่างเดียวตามคำขอ ดูผลทดสอบปัจจุบันใน docs/TEST-RESULTS.md และข้อจำกัด Vercel ใน README ไม่มี GitHub/Blob/Supabase data connection

@@ -2,7 +2,7 @@
 
 ## Python / HTTP / persistence
 
-`python -m unittest discover -s tests -v` ผ่าน **22 tests** (11.332 วินาที) ใช้ temporary directory แยกจากข้อมูลจริง
+รุ่นไฟล์ text: `python -m unittest discover -s tests -v` ผ่าน **23 tests** (8.268 วินาที) ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -22,14 +22,14 @@
 - CLI เปิดพื้นที่ข้อมูลไม่ได้ แสดงข้อความและจบด้วย exit code 1
 - HTTP ส่งราคา abc/ติดลบ/ว่าง ขนาดติดลบ และชื่อว่างตรงเข้าเซิร์ฟเวอร์ ได้ 400 ไม่สร้างผลงาน; สถานะที่ส่งเป็น list ได้ 400 แทน 500
 - HTTP shell/assets/404, HttpOnly cookie, CSRF, bad JSON/type/large payload
-- ขาด storage env บน Vercel แจ้งข้อความอธิบาย ไม่ทำข้อมูลหาย
-- GitHub conflict retry ใช้ snapshot ล่าสุด จึงไม่คืนข้อมูลที่อีกคนลบแล้ว
+- โหมด Vercel ไม่ต้องมี storage env เปิด bootstrap และแก้ข้อมูลในไฟล์ text ได้
+- ย้าย database.json เดิมไป database.txt โดยไม่รีเซ็ตผลงานหรือ logs
 
-`python scripts/check_rubric.py` ผ่าน 7 checks: 38 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
+`python scripts/check_rubric.py` ผ่าน 7 checks: 37 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
 
-## GitHub repo ข้อมูลจริง
+## ขอบเขตการเก็บข้อมูลปัจจุบัน
 
-`python scripts/verify_github_data.py` ผ่าน: private JSON write/read ด้วย instance ใหม่, category deletion และ session write ใช้เวลารวม 9.8 วินาทีสำหรับหลาย API calls ไม่ได้ลบผลงานหรือคำสั่งซื้อ
+ใช้ database.txt เก็บ records + logs และ media/ เก็บรูป รุ่นนี้ไม่มี GitHub data storage หรือ API token ในเครื่องข้อมูลอยู่หลังปิดโปรแกรม บน Vercel เป็นไฟล์ชั่วคราวและแต่ละ instance อาจมีข้อมูลคนละชุด
 
 ## Browser จริงในเครื่อง
 
@@ -44,4 +44,4 @@
 
 ## สิ่งที่ยังต้องตรวจหลัง Deploy
 
-ยังไม่มีผลทดสอบ Vercel deployment จริง: เบราว์เซอร์ยังต้อง Login GitHub/Vercel และกำหนด ART_GITHUB_TOKEN ใน Environment Variables ต้องตรวจ runtime, imports, uploads, persistence และ full workflow บน URL จริงก่อนอ้างว่าขึ้น Vercelสำเร็จ
+ต้องตรวจ deployment รุ่นไฟล์ text บน URL จริง: runtime/imports, login, CRUD, logs และ workflow ห้ามอ้างข้อมูลถาวรบน Vercel แม้บางคำขอจะใช้ instance เดิม
