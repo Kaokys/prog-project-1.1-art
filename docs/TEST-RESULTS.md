@@ -2,7 +2,7 @@
 
 ## Python / HTTP / persistence
 
-รุ่นไฟล์ text: `python -m unittest discover -s tests -v` ผ่าน **24 tests** ใช้ temporary directory แยกจากข้อมูลจริง
+รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **27 tests** ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -26,11 +26,19 @@
 - ย้าย database.json เดิมไป database.txt โดยไม่รีเซ็ตผลงานหรือ logs
 - function สร้างข้อมูลเริ่มต้นได้แม้ไม่มีไฟล์ public ใน runtime bundle
 
-`python scripts/check_rubric.py` ผ่าน 7 checks: 37 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
+`python scripts/check_rubric.py` ผ่าน 7 checks: 40 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
 
 ## ขอบเขตการเก็บข้อมูลปัจจุบัน
 
-ใช้ database.txt เก็บ records + logs และ media/ เก็บรูป รุ่นนี้ไม่มี GitHub data storage หรือ API token ในเครื่องข้อมูลอยู่หลังปิดโปรแกรม บน Vercel เป็นไฟล์ชั่วคราวและแต่ละ instance อาจมีข้อมูลคนละชุด
+ใช้ database.txt เก็บ records + logs และ media/ เก็บรูป ในเครื่องข้อมูลอยู่หลังปิดโปรแกรม โค้ดรองรับ GitHub repo public สำหรับเก็บถาวรบน Vercel เมื่อกำหนด server write token ไม่มี token ใน JavaScript/Git/source code
+
+## GitHub public text — ตรวจจริง
+
+Repo Kaokys/prog-project-1.1-art-data เป็น public และเปิด database.txt ได้โดยไม่ Login การตรวจจริงก่อนเปลี่ยน public มีเฉพาะ 4 บัญชีสาธิต ไม่มีที่อยู่/order/media/session
+
+ทดสอบ write/read ด้วย instance ใหม่, อัปโหลด PNG 1 pixel, ส่งผลงาน/อนุมัติ, ลบแล้วเปิดอ่านใหม่ไม่ได้, audit log และ logout โดยไม่แสดง token ใน output แก้การอ่าน base64 รูปจาก GitHub ที่มี newline และเพิ่มกรณีนี้ใน test
+
+สถานะ Vercel โหมด GitHub: รอผู้ใช้ใส่ ART_GITHUB_TOKEN ใน Secret ที่เตรียมไว้สำหรับ Production/Preview แล้วจึง Redeploy และทดสอบบน URL จริง ไม่ถือว่าเว็บออนไลน์ใช้ storage ถาวรแล้วในขั้นตอนนี้
 
 ## Browser จริงในเครื่อง
 
@@ -43,7 +51,7 @@
 - Admin ยืนยัน paid → บันทึกเลขพัสดุ DEMO-TEST-123 → completed
 - Dashboard หลังสำเร็จ: ยอด 77 บาท, คำสั่งซื้อ 1, ส่วนแบ่งศิลปินก่อนส่วนลด 30 − commission 3 = 27 บาท
 
-## Vercel จริง — https://sillapa.vercel.app/
+## Vercel จริงรุ่นไฟล์ชั่วคราวก่อนเปลี่ยนเป็น GitHub — https://sillapa.vercel.app/
 
 ตรวจรุ่นไฟล์ text แล้ว: bootstrap HTTP 200, storage=temporary_text, รูปตัวอย่างโหลดได้ และไม่มี error ขอ ART_STORAGE
 

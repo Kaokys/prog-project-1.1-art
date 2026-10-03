@@ -24,8 +24,8 @@
 - การอ่าน/เขียน text ที่จัดโครงสร้าง JSON, atomic replace, try/except และไม่รีเซ็ต seed เมื่อเปิดใหม่ในเครื่อง
 - session cookie กับการตรวจ role/ownership ที่เซิร์ฟเวอร์; frontend ซ่อนปุ่มอย่างเดียวไม่พอ
 - คำสั่งซื้อ reserve/sold, key กันส่งซ้ำ, transitions และยอดรวม
-- ไฟล์ text ในเครื่องเก็บถาวร ส่วน Vercel ใช้พื้นที่ชั่วคราวที่อาจรีเซ็ตและแต่ละ instance อาจมีข้อมูลคนละชุด รุ่นนี้ไม่ใช้ storage ภายนอก
+- ไฟล์ text ในเครื่องกับ database.txt บน GitHub public; โหมด GitHub ใช้ SHA ป้องกันเขียนทับและไม่หายเมื่อ deploy ส่วนโหมด Vercel ที่ยังไม่มี token เป็นพื้นที่ชั่วคราว
 
 ## ทดสอบก่อนวันจริง
 
-รัน python -m unittest discover -s tests -v และ python scripts/check_rubric.py ให้ผ่าน จากนั้นลองครบ workflow ด้วย browser จริง หากต้องสาธิตการเก็บข้อมูลหลังปิดโปรแกรมให้ใช้ localhost ส่วน Vercel ใช้สาธิตเว็บออนไลน์โดยแจ้งข้อจำกัดพื้นที่ชั่วคราวให้ชัดเจน
+รัน python -m unittest discover -s tests -v และ python scripts/check_rubric.py ให้ผ่าน จากนั้นตรวจว่าเว็บ Vercel แสดงข้อมูลเก็บบน GitHub ลองเพิ่ม/แก้ผลงานแล้วเปิด database.txt ดู commit ใหม่ และ Redeploy ตรวจข้อมูลเดิม ห้ามเปิด token ต่อหน้าห้อง และใช้ข้อมูลสาธิตทั้งหมดเพราะ repo เป็น public

@@ -34,7 +34,7 @@ class TextStorageTests(unittest.TestCase):
             store = Storage()
             self.assertTrue(store.temporary)
             self.assertEqual(store.directory, Path(tempfile.gettempdir()) / "sillapa-coursework")
-        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"VERCEL":"1", "ART_STORAGE":"github", "ART_GITHUB_TOKEN":"unused", "ART_DATA_REPO":"unused"}, clear=True):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"VERCEL":"1"}, clear=True):
             app = Marketplace(Storage(directory))
             self.assertEqual(app.read("bootstrap")["storage"], "temporary_text")
             token = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]

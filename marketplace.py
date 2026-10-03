@@ -110,7 +110,7 @@ class Marketplace:
                 artist.pop("email", None)
             return {"user": public_user(user) if user else None, "artists": artists,
                     "categories": data["categories"], "settings": data["settings"], "catalogue": catalogue(data, query),
-                    "storage": "temporary_text" if self.storage.temporary else "text"}
+                    "storage": "github_public" if self.storage.remote else "temporary_text" if self.storage.temporary else "text"}
         if action == "catalogue":
             return catalogue(data, query, user)
         if action == "art":

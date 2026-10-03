@@ -1,6 +1,6 @@
 # SILLAPA — เว็บขายงานศิลปะสำหรับส่งงาน
 
-Python Standard Library + HTML/CSS/JavaScript ใช้ไฟล์ text อ่านได้ด้วย Notepad ไม่ใช้ SQL, Blob, Supabase หรือ GitHub เป็นฐานข้อมูล
+Python Standard Library + HTML/CSS/JavaScript ใช้ไฟล์ text อ่านได้ด้วย Notepad ไม่ใช้ SQL, Blob หรือ Supabase ออนไลน์เก็บ database.txt ใน GitHub repo public ตามขอบเขตผู้ใช้
 
 ## เปิดในเครื่อง
 
@@ -19,7 +19,7 @@ python server.py 3200
 3. ค้นหา กรองหมวด ศิลปิน ราคา เรียงลำดับ และแบ่งหน้า
 4. Dashboard ยอดขาย คำสั่งซื้อ ผลงานรออนุมัติ และรายงานศิลปิน
 5. เก็บ log การแก้ไขข้อมูลสำคัญในไฟล์ text พร้อมดูผ่านหน้า admin
-6. Deploy บน Vercel โดยไม่ต้องตั้ง environment variables หรือเชื่อม storage
+6. Deploy บน Vercel พร้อมเก็บข้อมูลและ log ในไฟล์ text บน GitHub
 
 ระบบศิลปินส่งผลงาน → admin อนุมัติ → ลูกค้าสั่งซื้อ → แนบสลิป → admin ยืนยัน → จัดส่ง → สำเร็จ ใช้การคำนวณราคาที่ Python ไม่เชื่อยอดที่ส่งจาก browser
 
@@ -32,11 +32,17 @@ python server.py 3200
 - หากมี data/database.json จากรุ่นก่อน จะคัดลอกข้อมูลเดิมเป็น database.txt ครั้งแรก โดยเก็บไฟล์เก่าไว้
 - โฟลเดอร์ data ไม่ถูก push เพื่อไม่เผยแพร่บัญชี/สลิป
 
-## ข้อจำกัดบน Vercel
+## ไฟล์ text บน GitHub (public)
 
-Vercel ใช้ไฟล์ใน /tmp/sillapa-coursework สำหรับโหมดสาธิต **ข้อมูลไม่ถาวร และแต่ละ instance อาจมีข้อมูลคนละชุด** เมื่อเริ่ม instance ใหม่หรือ deploy ใหม่อาจกลับเป็นข้อมูลตัวอย่าง รวมถึง user, session, order, upload และ log
+Repo ข้อมูลแยกจากโค้ด: https://github.com/Kaokys/prog-project-1.1-art-data/blob/main/database.txt เปิดไฟล์ดูได้ทันที ข้อมูลและ logs อยู่ในไฟล์เดียวกัน และรูปอัปโหลดอยู่ media/ บันทึกข้อมูลสำคัญจะสร้าง commit โดยอัตโนมัติ จึงดูประวัติก่อน/หลังได้ การเขียน repo ข้อมูลไม่กระตุ้น deploy ของ repo โค้ด
 
-จึงใช้ Vercel สำหรับทดลองเว็บ หากสาธิตที่ต้องเก็บข้อมูลหลังปิดโปรแกรม ให้รันในเครื่อง ไม่มีการเชื่อมบริการอื่นเพื่อแก้ข้อจำกัดนี้ตามขอบเขตที่กำหนด
+**Public หมายถึงทุกคนอ่านบัญชี ที่อยู่ คำสั่งซื้อ และรูป/สลิปได้จาก repo แม้หน้าเว็บจะตรวจสิทธิ์** ใช้ข้อมูลสาธิตเท่านั้น รหัสผ่านเก็บเป็น hash แต่ห้ามใช้รหัสผ่านจริงหรือรหัสผ่านที่ใช้กับบริการอื่น token สำหรับเขียนไม่อยู่ในไฟล์ text/JavaScript/Git
+
+รัน python scripts/setup_github_data.py เพื่อเริ่ม database.txt ครั้งแรก (ใช้บัญชี Git ที่ Login อยู่แล้ว) ไม่เขียนทับไฟล์เดิม การเปลี่ยน repo เดิมเป็น public จะทำเฉพาะชุดบัญชีสาธิตที่ไม่มีที่อยู่/order/upload/session
+
+ข้อมูลคงอยู่ข้าม instance และ deploy เมื่อ Vercel ใช้โหมด GitHub การบันทึกใช้ SHA ป้องกันการเขียนทับเมื่อแก้พร้อมกัน และอ่านใหม่/ลองไม่เกิน 4 ครั้ง ไม่มีการถอยกลับไปเขียนไฟล์ชั่วคราวเมื่อบันทึก GitHub ไม่ได้ GitHub API มี quota และการเขียนแต่ละครั้งสร้าง commit เหมาะกับงานสาธิตขนาดเล็ก database.txt จำกัด 850 KB และรูปแต่ละไฟล์ 500 KB
+
+หากยังไม่ได้ตั้ง token บน Vercel โค้ดยังคงใช้โหมดไฟล์ชั่วคราวเดิม (ข้อความท้ายเว็บบอกว่าอาจรีเซ็ต) **ห้ามถือว่าข้อมูลถาวรจนได้ storage=github_public และทดสอบ write/read/redeploy จริง**
 
 ## บัญชีสาธิต
 
@@ -53,7 +59,17 @@ Vercel ใช้ไฟล์ใน /tmp/sillapa-coursework สำหรับโ
 
 ## ขึ้น Vercel
 
-Import Kaokys/prog-project-1.1-art → Framework Other → Output Directory public → ไม่ต้องมี Build Command → Deploy ไม่มี token หรือ env ที่ต้องเพิ่ม api/index.py ใช้ Python HTTP handler และ vercel.json ตั้ง /api rewrite ไว้แล้ว
+Import Kaokys/prog-project-1.1-art → Framework Other → Output Directory public → ไม่ต้องมี Build Command api/index.py ใช้ Python HTTP handler และ vercel.json ตั้ง /api rewrite ไว้แล้ว
+
+ตั้ง Environment Variables ฝั่ง server สำหรับ Production และ Preview:
+
+```text
+ART_DATA_REPO=Kaokys/prog-project-1.1-art-data
+ART_DATA_BRANCH=main
+ART_GITHUB_TOKEN=<fine-grained token ของคุณ>
+```
+
+สร้าง token ที่ https://github.com/settings/personal-access-tokens/new เลือกเฉพาะ prog-project-1.1-art-data และ Contents: Read and write วาง token เป็น Secret ใน Vercel แล้ว Redeploy โค้ดเปิดโหมด GitHub อัตโนมัติเมื่อมี token บน Vercel หรือกำหนด ART_STORAGE=github เพื่อเปิดชัดเจน ห้ามตั้ง ART_STORAGE ก่อน token พร้อมถ้ายังต้องการให้โหมดสาธิตเดิมใช้งานได้
 
 ## ทดสอบและนำเสนอ
 

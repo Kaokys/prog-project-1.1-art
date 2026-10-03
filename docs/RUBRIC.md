@@ -30,12 +30,12 @@
 | Search/filter/sort/page | หน้า งานศิลปะ + max price + artist/category + sort + pagination; ชุดทดสอบใช้ limit=2 |
 | Dashboard | #portal ของ admin: completed revenue, orders, pending, users, artist sales |
 | Important edit logs | #logs: registration, uploads, profile, artwork, category, user, order, settings |
-| Vercel | api/index.py BaseHTTPRequestHandler, vercel.json; ไม่ต้องเชื่อม storage หรือเพิ่ม env ใช้ไฟล์ text ชั่วคราวเฉพาะ instance จึงไม่รับประกันข้อมูลถาวรบน Vercel |
+| Vercel | api/index.py BaseHTTPRequestHandler, vercel.json; เมื่อมี ART_GITHUB_TOKEN จะอ่าน/เขียน database.txt บน repo ข้อมูล public ข้อมูลจึงไม่ผูกกับ instance |
 
 ## กฎ Logic
 
 - ไม่เชื่อ total/role/price จาก browser; คำนวณจากข้อมูลผลงานที่บันทึก
-- ผลงานแต่ละชิ้นซื้อได้ครั้งเดียวในขณะที่ reserved/sold ใน store เดียวกัน; atomic file update และ lock ใน process เดียวกัน
+- ผลงานแต่ละชิ้นซื้อได้ครั้งเดียวในขณะที่ reserved/sold ใน store เดียวกัน; local atomic file update หรือ GitHub SHA conflict retry
 - key สั่งซื้อซ้ำให้คืนออเดอร์เดิม ไม่สร้างซ้ำ
 - transition: pending_payment → payment_review → paid → shipped → completed; ไม่ข้ามขั้น
 - ยกเลิกได้ก่อน paid และคืน artwork เป็น approved
@@ -44,4 +44,4 @@
 - ART10 ลด 10% ปัดเศษเป็นสตางค์; ค่าส่ง 50 บาท ส่งฟรีหลังส่วนลด >= 1,000 บาท; ภาษีสาธิต 0 และระบุบนเว็บ
 - commission report แสดง 10% ของราคาผลงานก่อนส่วนลด ไม่อ้างว่าโอนรายได้จริง
 
-ขอบเขตล่าสุดใช้ไฟล์ text อย่างเดียวตามคำขอ ดูผลทดสอบปัจจุบันใน docs/TEST-RESULTS.md และข้อจำกัด Vercel ใน README ไม่มี GitHub/Blob/Supabase data connection
+ขอบเขตล่าสุดใช้ไฟล์ text บน GitHub public ตามคำขอ ไม่ใช้ SQL/Blob/Supabase ดูผลตรวจและสถานะการเปิดโหมด GitHub บน Vercel ใน docs/TEST-RESULTS.md
