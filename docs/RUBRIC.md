@@ -17,7 +17,7 @@
 | >= 2 Python modules | main, marketplace, storage, auth, validation, seed, server, console, api/index |
 | Standard Library only | ast, json, pathlib, urllib, http.server, hashlib, hmac, secrets, decimal, zlib, struct, threading, tempfile ฯลฯ; ไม่ใช้ pip packages |
 | Upload + persistence | storage.put_media/get_media, database.txt; test_uploaded_art_survives_process_restart_and_deletion ปิด subprocess แล้วเปิดอีก process ตรวจ bytes รูป/ราคา/ชื่อเดิมในเครื่อง |
-| try/except ทุก input/file boundary | main.ask/upload_file; storage.load/save/media; server static files; seed sample metadata; errors แปลงเป็นข้อความ |
+| try/except ทุก input/file boundary | main.ask/upload_file; storage.load/save/media; server static files; errors แปลงเป็นข้อความ |
 | ไม่มี business logic ที่ top level | แยกฟังก์ชันและคลาส main ใช้ if __name__ == '__main__' เรียก main |
 | ไม่เห็น Traceback | CLI จับ AppError/Exception; HTTP ส่ง JSON error ไม่ส่ง exception details; error ภาษาไทย |
 

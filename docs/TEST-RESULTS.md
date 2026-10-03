@@ -2,7 +2,7 @@
 
 ## Python / HTTP / persistence
 
-รุ่นไฟล์ text: `python -m unittest discover -s tests -v` ผ่าน **23 tests** (8.268 วินาที) ใช้ temporary directory แยกจากข้อมูลจริง
+รุ่นไฟล์ text: `python -m unittest discover -s tests -v` ผ่าน **24 tests** ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -24,6 +24,7 @@
 - HTTP shell/assets/404, HttpOnly cookie, CSRF, bad JSON/type/large payload
 - โหมด Vercel ไม่ต้องมี storage env เปิด bootstrap และแก้ข้อมูลในไฟล์ text ได้
 - ย้าย database.json เดิมไป database.txt โดยไม่รีเซ็ตผลงานหรือ logs
+- function สร้างข้อมูลเริ่มต้นได้แม้ไม่มีไฟล์ public ใน runtime bundle
 
 `python scripts/check_rubric.py` ผ่าน 7 checks: 37 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
 
