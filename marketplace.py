@@ -22,7 +22,7 @@ def find(rows, value, label="ข้อมูล", include_deleted=False):
 
 
 def audit(data, user, action, entity, item_id):
-    data["logs"].append({"id": identifier(), "time": timestamp(), "actor": user["name"],
+    data["logs"].append({"id": identifier(), "time": timestamp(), "actor": user["name"], "actor_id": user["id"],
                          "action": action, "entity": entity, "item_id": item_id})
 
 

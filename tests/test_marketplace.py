@@ -139,6 +139,31 @@ class MarketplaceTests(unittest.TestCase):
         self.assertEqual(report["revenue"], order["total"])
         self.assertEqual(report["completed"], 1)
         self.fails(409, lambda: self.order(key="sold-again"))
+        buyer = json.loads((Path(self.temp.name) / "customer/customer.txt").read_text(encoding="utf-8"))
+        artist = json.loads((Path(self.temp.name) / "artist/blue.txt").read_text(encoding="utf-8"))
+        self.assertEqual(buyer["purchases"][0]["status"], "completed")
+        self.assertEqual(artist["sales"][0]["items"][0]["id"], "art-1")
+        self.assertEqual(buyer["uploads"][0]["kind"], "slip")
+        self.assertNotIn("password", buyer["profile"])
+        self.assertNotEqual(buyer["profile"]["password_hash"], "ArtDemo2026!")
+        self.assertNotIn(self.customer, json.dumps(buyer))
+
+    def test_deleted_user_keeps_history_revokes_sessions_and_moves_role_file(self):
+        created = self.app.write("user_create", {"name": "Disposable user", "email": "delete@example.test",
+                    "password": "StrongPass123", "role": "customer", "active": True}, self.admin)["user"]
+        token = self.app.write("login", {"email": created["email"], "password": "StrongPass123"})["token"]
+        self.app.write("user_update", created | {"role": "staff"}, self.admin)
+        root = Path(self.temp.name)
+        self.assertFalse((root / "customer" / (created["id"] + ".txt")).exists())
+        self.assertTrue((root / "artist" / (created["id"] + ".txt")).exists())
+        token = self.app.write("login", {"email": created["email"], "password": "StrongPass123"})["token"]
+        self.app.write("user_delete", {"id": created["id"]}, self.admin)
+        self.fails(401, lambda: self.app.read("profile", token=token))
+        self.fails(401, lambda: self.app.write("login", {"email": created["email"], "password": "StrongPass123"}))
+        self.assertNotIn(created["id"], [u["id"] for u in self.app.read("users", token=self.admin)["items"]])
+        record = json.loads((root / "artist" / (created["id"] + ".txt")).read_text(encoding="utf-8"))
+        self.assertTrue(record["profile"]["deleted"])
+        self.assertTrue(any(row["action"] == "user_delete" for row in record["logs"]))
 
     def test_concurrent_checkout_one_winner(self):
         def attempt(i):

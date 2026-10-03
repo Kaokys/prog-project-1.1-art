@@ -1,5 +1,6 @@
 """Readable UTF-8 text files locally or in the coursework GitHub repo."""
 import base64
+import hashlib
 import json
 import os
 import re
@@ -12,6 +13,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 from validation import AppError
 from seed import new_data
+from user_files import text_files
 
 _locks = {}
 _locks_guard = threading.Lock()
@@ -42,11 +44,15 @@ class Storage:
             raise StorageError("เปิดพื้นที่ข้อมูลไม่ได้ กรุณาตรวจสอบ path และสิทธิ์ของโฟลเดอร์") from None
 
     def github(self, path, method="GET", body=None):
-        if method != "GET" and not self.token:
-            raise StorageError("กรุณาตั้ง ART_GITHUB_TOKEN ใน Vercel เพื่อให้เว็บบันทึกไฟล์ text ลง GitHub ได้")
-        endpoint = "https://api.github.com/repos/" + self.repo + "/contents/" + quote(path, safe="/")
+        endpoint = "/contents/" + quote(path, safe="/")
         if method == "GET":
             endpoint += "?ref=" + quote(self.branch, safe="")
+        return self.github_api(endpoint, method, body)
+
+    def github_api(self, path, method="GET", body=None):
+        if method != "GET" and not self.token:
+            raise StorageError("กรุณาตั้ง ART_GITHUB_TOKEN ใน Vercel เพื่อให้เว็บบันทึกไฟล์ text ลง GitHub ได้")
+        endpoint = "https://api.github.com/repos/" + self.repo + path
         headers = {"Accept":"application/vnd.github+json", "User-Agent":"Sillapa-Coursework",
                    "X-GitHub-Api-Version":"2026-03-10", "Content-Type":"application/json", "Cache-Control":"no-cache"}
         if self.token:
@@ -58,7 +64,7 @@ class Storage:
         except HTTPError as error:
             if error.code == 404 and method == "GET":
                 return None
-            if error.code in (409, 422) and method == "PUT":
+            if error.code in (409, 422) and method in ("PUT", "PATCH"):
                 raise ConflictError() from None
             raise StorageError("เชื่อมต่อ GitHub ไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ token หรือโควตา API") from None
         except (URLError, OSError, ValueError, TypeError):
@@ -110,12 +116,10 @@ class Storage:
             if self.remote:
                 if len(encoded) > 850000:
                     raise StorageError("ไฟล์ text ใหญ่เกิน 850 KB กรุณาสำรองและลดข้อมูลสาธิต")
-                body = {"message":"Save coursework data and audit log", "content":base64.b64encode(encoded).decode(), "branch":self.branch}
-                if version:
-                    body["sha"] = version
-                self.github("database.txt", "PUT", body)
+                self.save_remote_files(data, encoded, version)
                 return
             self.directory.mkdir(parents=True, exist_ok=True)
+            self.save_user_files(data)
             with tempfile.NamedTemporaryFile(dir=self.directory, delete=False) as stream:
                 temporary = stream.name
                 stream.write(encoded)
@@ -130,6 +134,59 @@ class Storage:
                     os.unlink(temporary)
             except OSError:
                 pass
+
+    def save_remote_files(self, data, encoded, version):
+        """Publish database, user records and logs together in one Git commit."""
+        if not self.token:
+            raise StorageError("กรุณาตั้ง ART_GITHUB_TOKEN ใน Vercel เพื่อบันทึกข้อมูล")
+        ref = "/git/refs/heads/" + quote(self.branch, safe="/")
+        head = self.github_api("/git/ref/heads/" + quote(self.branch, safe="/"))["object"]["sha"]
+        tree = self.github_api("/git/trees/" + head + "?recursive=1")
+        if tree.get("truncated"):
+            raise StorageError("รายการไฟล์ใหญ่เกินขนาดที่รองรับ")
+        existing = {entry["path"]: entry["sha"] for entry in tree["tree"] if entry["type"] == "blob"}
+        if existing.get("database.txt") != version:
+            raise ConflictError()
+        files = text_files(data) | {"database.txt": encoded.decode("utf-8")}
+        changes = []
+        for path, content in files.items():
+            raw = content.encode("utf-8")
+            digest = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+            if existing.get(path) != digest:
+                changes.append({"path": path, "mode": "100644", "type": "blob", "content": content})
+        for path in existing:
+            if re.fullmatch(r"(artist|customer|admin)/[A-Za-z0-9_-]{1,100}\.txt", path) and path not in files:
+                changes.append({"path": path, "mode": "100644", "type": "blob", "sha": None})
+        if not changes:
+            return
+        created = self.github_api("/git/trees", "POST", {"base_tree": tree["sha"], "tree": changes})
+        commit = self.github_api("/git/commits", "POST", {"message": "Save text data, per-user files and audit log",
+                                  "tree": created["sha"], "parents": [head]})
+        # Never force: another writer must cause a retry, not data loss.
+        self.github_api(ref, "PATCH", {"sha": commit["sha"], "force": False})
+
+    def save_user_files(self, data):
+        files = text_files(data)
+        for path, content in files.items():
+            target = self.directory / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as stream:
+                    temporary = stream.name
+                    stream.write(content.encode("utf-8"))
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temporary, target)
+            finally:
+                if temporary and os.path.exists(temporary):
+                    os.unlink(temporary)
+        for folder in ("artist", "customer", "admin"):
+            root = self.directory / folder
+            if root.exists():
+                for target in root.glob("*.txt"):
+                    if re.fullmatch(r"[A-Za-z0-9_-]{1,100}\.txt", target.name) and folder + "/" + target.name not in files:
+                        target.unlink()
 
     def update(self, function):
         with self.lock:

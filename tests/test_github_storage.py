@@ -1,6 +1,7 @@
 import base64
 import copy
 import json
+import hashlib
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,6 +16,40 @@ class FakeGitHub(Storage):
         self.files = {"database.txt":json.dumps(new_data()).encode()}
         self.version = 1
         self.conflict = False
+        self.staged = {}
+
+    def github_api(self, path, method="GET", body=None):
+        if path.startswith("/git/ref/heads/"):
+            return {"object": {"sha": str(self.version)}}
+        if path.startswith("/git/trees/") and method == "GET":
+            return {"sha": str(self.version), "tree": [{"path": name, "type": "blob", "sha":
+                str(self.version) if name == "database.txt" else hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()}
+                for name, raw in self.files.items()]}
+        if path == "/git/trees":
+            self.staged = copy.deepcopy(self.files)
+            for entry in body["tree"]:
+                if entry.get("sha", "present") is None:
+                    self.staged.pop(entry["path"], None)
+                else:
+                    self.staged[entry["path"]] = entry["content"].encode()
+            return {"sha": "staged"}
+        if path == "/git/commits":
+            self.parent = body["parents"][0]
+            return {"sha": "commit"}
+        if path.startswith("/git/refs/heads/"):
+            self.assert_no_force = body["force"] is False
+            if self.conflict:
+                self.conflict = False
+                latest = json.loads(self.files["database.txt"])
+                latest["artworks"][0]["deleted"] = True
+                self.files["database.txt"] = json.dumps(latest).encode()
+                self.version += 1
+            if self.parent != str(self.version):
+                raise ConflictError()
+            self.files = self.staged
+            self.version += 1
+            return {}
+        raise AssertionError(path)
 
     def github(self, path, method="GET", body=None):
         if method == "GET":
@@ -48,6 +83,9 @@ class GitHubStorageTests(unittest.TestCase):
         self.assertTrue(data["artworks"][0]["deleted"])
         self.assertIn("Concurrent category", data["categories"])
         self.assertEqual(data["logs"][-1]["action"], "category_create")
+        self.assertTrue(store.assert_no_force)
+        self.assertEqual(json.loads(store.files["artist/blue.txt"])["artworks"][0]["deleted"], True)
+        self.assertEqual(json.loads(store.files["admin/admin.txt"])["profile"]["email"], "admin@demo.local")
 
     def test_new_instance_reads_same_remote_text_and_image(self):
         writer = FakeGitHub()
