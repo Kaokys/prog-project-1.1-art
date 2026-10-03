@@ -16,7 +16,7 @@
 | list/dict/tuple/set | list artworks/orders; dict user/session/address; tuple ROLES; set ids กันตะกร้าซ้ำและ transition ที่อนุญาต |
 | >= 2 Python modules | main, marketplace, storage, auth, validation, seed, server, console, api/index |
 | Standard Library only | ast, json, pathlib, urllib, http.server, hashlib, hmac, secrets, decimal, zlib, struct, threading, tempfile ฯลฯ; ไม่ใช้ pip packages |
-| Upload + persistence | storage.put_media/get_media, database.json; เปิดโปรแกรมใหม่ใช้ข้อมูลเดิม |
+| Upload + persistence | storage.put_media/get_media, database.json; test_uploaded_art_survives_process_restart_and_deletion ปิด subprocess แล้วเปิดอีก process ตรวจ bytes รูป/ราคา/ชื่อเดิม |
 | try/except ทุก input/file boundary | main.ask/upload_file; storage.load/save/media; server static files; seed sample metadata; errors แปลงเป็นข้อความ |
 | ไม่มี business logic ที่ top level | แยกฟังก์ชันและคลาส main ใช้ if __name__ == '__main__' เรียก main |
 | ไม่เห็น Traceback | CLI จับ AppError/Exception; HTTP ส่ง JSON error ไม่ส่ง exception details; error ภาษาไทย |
@@ -43,3 +43,5 @@
 - artwork draft และสลิปเป็น private; public เฉพาะรูปที่เผยแพร่/โปรไฟล์/โปสเตอร์
 - ART10 ลด 10% ปัดเศษเป็นสตางค์; ค่าส่ง 50 บาท ส่งฟรีหลังส่วนลด >= 1,000 บาท; ภาษีสาธิต 0 และระบุบนเว็บ
 - commission report แสดง 10% ของราคาผลงานก่อนส่วนลด ไม่อ้างว่าโอนรายได้จริง
+
+ผลตรวจล่าสุด: unittest **22 tests ผ่าน** และ AST **7 checks ผ่าน** ดู docs/TEST-RESULTS.md ส่วนการขึ้น Vercel ยังรอ Login และ Environment Variables; ยังไม่ถือว่าข้อนี้ผ่านจน deploy และทดสอบบน URL จริง

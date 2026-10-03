@@ -279,7 +279,7 @@ class Marketplace:
                     order["slip"] = image_owned(data, body.get("slip"), user, "slip")
                     order["status"] = "payment_review"
                 else:
-                    status = body.get("status")
+                    status = text(body.get("status"), "สถานะ", 1, 30)
                     if status == "cancelled":
                         if order["status"] not in ("pending_payment", "payment_review"):
                             raise AppError("ยกเลิกได้เฉพาะคำสั่งซื้อที่ยังไม่ยืนยันการชำระ", 409)

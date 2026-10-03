@@ -111,7 +111,14 @@ def run_action(app, menu, user, token):
 
 def main():
     configure_console()
-    app, token, user = Marketplace(Storage()), "", None
+    try:
+        app, token, user = Marketplace(Storage()), "", None
+    except AppError as error:
+        output("เปิดโปรแกรมไม่ได้: " + str(error))
+        return 1
+    except Exception:
+        output("เปิดโปรแกรมไม่ได้ กรุณาตรวจสอบการตั้งค่าข้อมูล")
+        return 1
     output("SILLAPA — Python Standard Library | กด 0 เพื่อออก ข้อมูลไม่หาย")
     while True:
         try:

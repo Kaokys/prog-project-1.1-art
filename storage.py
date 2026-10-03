@@ -27,13 +27,16 @@ class ConflictError(Exception):
 
 class Storage:
     def __init__(self, directory=None, repo=None, token=None):
-        self.directory = Path(directory or os.environ.get("ART_LOCAL_DIR", "data"))
-        self.repo = repo or os.environ.get("ART_DATA_REPO", "")
-        self.token = token or os.environ.get("ART_GITHUB_TOKEN", "")
-        self.branch = os.environ.get("ART_DATA_BRANCH", "main")
-        self.remote = os.environ.get("ART_STORAGE") == "github" or bool(repo)
-        with _locks_guard:
-            self.lock = _locks.setdefault(str(self.directory.resolve()) if not self.remote else self.repo, threading.RLock())
+        try:
+            self.directory = Path(directory or os.environ.get("ART_LOCAL_DIR", "data"))
+            self.repo = repo or os.environ.get("ART_DATA_REPO", "")
+            self.token = token or os.environ.get("ART_GITHUB_TOKEN", "")
+            self.branch = os.environ.get("ART_DATA_BRANCH", "main")
+            self.remote = os.environ.get("ART_STORAGE") == "github" or bool(repo)
+            with _locks_guard:
+                self.lock = _locks.setdefault(str(self.directory.resolve()) if not self.remote else self.repo, threading.RLock())
+        except (OSError, ValueError, TypeError):
+            raise StorageError("เปิดพื้นที่ข้อมูลไม่ได้ กรุณาตรวจสอบ path และสิทธิ์ของโฟลเดอร์") from None
 
     def github(self, path, method="GET", body=None):
         if not self.repo or not self.token:

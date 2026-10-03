@@ -1,3 +1,4 @@
+import base64
 import json
 import tempfile
 import threading
@@ -7,6 +8,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from unittest.mock import patch
 from server import LocalHandler
+from tests.test_marketplace import png
 
 
 class HTTPTests(unittest.TestCase):
@@ -77,6 +79,33 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(status, 503)
             self.assertIn("ART_STORAGE", raw.decode())
             self.assertNotIn(b"Traceback", raw)
+
+    def test_server_rejects_invalid_artwork_fields_without_mutation(self):
+        status, headers, _ = self.request("/api?action=login", {"email":"benjamin.blue@demo.local", "password":"ArtDemo2026!"})
+        self.assertEqual(status, 200)
+        cookie = headers["Set-Cookie"].split(";")[0]
+        status, _, raw = self.request("/api?action=upload", {"kind":"art", "image":"data:image/png;base64," + base64.b64encode(png()).decode()}, cookie)
+        self.assertEqual(status, 200)
+        art = {"image":json.loads(raw)["url"], "title":"Valid title", "description":"Valid description", "technique":"Digital", "width":"30.5", "height":"40", "price":"99.99", "category":"งานศิลปะ"}
+        before = json.loads(self.request("/api?action=catalogue&manage=1", cookie=cookie)[2])["total"]
+        for field, value in (("price","abc"), ("price",-1), ("price"," "), ("width",-10), ("title"," ")):
+            status, _, raw = self.request("/api?action=art_create", art | {field:value}, cookie)
+            self.assertEqual(status, 400)
+            self.assertTrue(json.loads(raw)["error"])
+            self.assertNotIn(b"Traceback", raw)
+        after = json.loads(self.request("/api?action=catalogue&manage=1", cookie=cookie)[2])["total"]
+        self.assertEqual(before, after)
+        status, headers, _ = self.request("/api?action=login", {"email":"customer@demo.local", "password":"ArtDemo2026!"})
+        customer_cookie = headers["Set-Cookie"].split(";")[0]
+        address = {"name":"Test Buyer", "phone":"0812345678", "line":"123 Test Road", "district":"เมือง", "province":"ขอนแก่น", "postal":"40000"}
+        status, _, raw = self.request("/api?action=order_create", {"items":["art-6"], "key":"http-status-test", "address":address}, customer_cookie)
+        self.assertEqual(status, 200)
+        order_id = json.loads(raw)["order"]["id"]
+        status, _, raw = self.request("/api?action=order_status", {"id":order_id, "status":["paid"]}, customer_cookie)
+        self.assertEqual(status, 400)
+        self.assertNotIn(b"Traceback", raw)
+        status, _, _ = self.request("/api?action=order_status", {"id":order_id, "status":"cancelled"}, customer_cookie)
+        self.assertEqual(status, 200)
 
 
 if __name__ == "__main__":

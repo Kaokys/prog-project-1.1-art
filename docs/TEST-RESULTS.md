@@ -1,8 +1,8 @@
-# ผลทดสอบ — 3 ตุลาคม 2026
+# ผลทดสอบ — 4 ตุลาคม 2026
 
 ## Python / HTTP / persistence
 
-`python -m unittest discover -s tests -v` ผ่าน **18 tests** ใช้ temporary directory แยกจากข้อมูลจริง
+`python -m unittest discover -s tests -v` ผ่าน **22 tests** (11.332 วินาที) ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -17,6 +17,10 @@
 - User/category/profile/address CRUD และเปลี่ยนสิทธิ์ยกเลิก session เดิม
 - File write failure ไม่บันทึกบางส่วน; damaged JSON ไม่ถูกรีเซ็ต seed ทับ
 - CLI เมนูผิด/ออกจากโปรแกรม ไม่มี Traceback
+- subprocess อัปโหลดและเผยแพร่ผลงานแล้วปิดจริง; subprocess ใหม่อ่านชื่อ ราคา และ bytes รูปเดิมได้ครบ; ลบแล้ว storage ใหม่อ่านไม่ได้
+- CLI เลือกไฟล์ .txt และอ่าน JSON เสีย แสดงข้อความ ไม่มี Traceback และไม่เขียนทับ JSON เดิม
+- CLI เปิดพื้นที่ข้อมูลไม่ได้ แสดงข้อความและจบด้วย exit code 1
+- HTTP ส่งราคา abc/ติดลบ/ว่าง ขนาดติดลบ และชื่อว่างตรงเข้าเซิร์ฟเวอร์ ได้ 400 ไม่สร้างผลงาน; สถานะที่ส่งเป็น list ได้ 400 แทน 500
 - HTTP shell/assets/404, HttpOnly cookie, CSRF, bad JSON/type/large payload
 - ขาด storage env บน Vercel แจ้งข้อความอธิบาย ไม่ทำข้อมูลหาย
 - GitHub conflict retry ใช้ snapshot ล่าสุด จึงไม่คืนข้อมูลที่อีกคนลบแล้ว

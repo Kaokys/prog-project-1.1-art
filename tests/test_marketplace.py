@@ -190,6 +190,62 @@ class MarketplaceTests(unittest.TestCase):
         self.assertNotIn("Traceback", result.stdout + result.stderr)
         self.assertIn("ปิดโปรแกรมเรียบร้อย", result.stdout)
 
+    def test_uploaded_art_survives_process_restart_and_deletion(self):
+        # The writer subprocess exits fully before another process reads its files.
+        writer = '''import base64, json, sys
+from marketplace import Marketplace
+from storage import Storage
+app = Marketplace(Storage(sys.argv[1]))
+staff = app.write("login", {"email":"benjamin.blue@demo.local", "password":"ArtDemo2026!"})["token"]
+admin = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]
+image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + sys.argv[2]}, staff)["url"]
+art = app.write("art_create", {"title":"Restart proof", "description":"Uploaded before closing", "technique":"Digital", "width":"30.5", "height":"40", "price":"99.99", "category":"งานศิลปะ", "image":image}, staff)["art"]
+app.write("art_review", {"id":art["id"], "status":"approved"}, admin)
+print(json.dumps({"id":art["id"], "media":image.split("id=")[1]}))
+'''
+        reader = '''import base64, json, sys
+from marketplace import Marketplace
+from storage import Storage
+app = Marketplace(Storage(sys.argv[1]))
+art = app.read("art", {"id":sys.argv[2]})["art"]
+print(json.dumps({"title":art["title"], "price":art["price"], "image":base64.b64encode(app.media(sys.argv[3])[0]).decode()}))
+'''
+        env = os.environ | {"ART_STORAGE": "local", "PYTHONUTF8": "1"}
+        created = subprocess.run([sys.executable, "-c", writer, self.temp.name, base64.b64encode(png()).decode()], capture_output=True, text=True, encoding="utf-8", env=env, timeout=15)
+        self.assertEqual(created.returncode, 0, created.stderr)
+        ids = json.loads(created.stdout)
+        restarted = subprocess.run([sys.executable, "-c", reader, self.temp.name, ids["id"], ids["media"]], capture_output=True, text=True, encoding="utf-8", env=env, timeout=15)
+        self.assertEqual(restarted.returncode, 0, restarted.stderr)
+        result = json.loads(restarted.stdout)
+        self.assertEqual((result["title"], result["price"]), ("Restart proof", 9999))
+        self.assertEqual(base64.b64decode(result["image"]), png())
+        self.app.write("art_delete", {"id": ids["id"]}, self.admin)
+        self.fails(404, lambda: Marketplace(Storage(self.temp.name)).read("art", {"id": ids["id"]}))
+
+    def test_cli_invalid_file_and_corrupted_json_are_readable(self):
+        env = os.environ | {"ART_LOCAL_DIR": self.temp.name, "ART_STORAGE": "local", "PYTHONUTF8": "1"}
+        invalid_file = Path(self.temp.name) / "not-an-image.txt"
+        invalid_file.write_text("ordinary text", encoding="utf-8")
+        commands = "1\nbenjamin.blue@demo.local\nArtDemo2026!\n6\n" + str(invalid_file) + "\n0\n"
+        result = subprocess.run([sys.executable, "main.py"], input=commands, capture_output=True, text=True, encoding="utf-8", env=env, timeout=10)
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("Traceback", result.stdout + result.stderr)
+        self.assertIn("ไฟล์ไม่ใช่รูป", result.stdout)
+        database = Path(self.temp.name) / "database.json"
+        database.write_text("broken", encoding="utf-8")
+        result = subprocess.run([sys.executable, "main.py"], input="3\n\n0\n", capture_output=True, text=True, encoding="utf-8", env=env, timeout=10)
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("Traceback", result.stdout + result.stderr)
+        self.assertIn("อ่านไฟล์ข้อมูลไม่ได้", result.stdout)
+        self.assertEqual(database.read_text(), "broken")
+
+    def test_cli_startup_file_error_is_readable(self):
+        import main
+        with patch("main.Storage", side_effect=StorageError("พื้นที่ข้อมูลไม่พร้อม")), patch("sys.stdout", new_callable=io.StringIO) as output:
+            self.assertEqual(main.main(), 1)
+            self.assertIn("พื้นที่ข้อมูลไม่พร้อม", output.getvalue())
+            self.assertNotIn("Traceback", output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
