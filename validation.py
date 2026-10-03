@@ -73,15 +73,15 @@ def address(value):
     return result
 
 
-def image_payload(value):
+def image_payload(value, max_bytes=500000, max_pixels=4000000):
     """Validate PNG/JPEG bytes; no trusting filenames, MIME labels or SVG."""
     try:
-        value = text(value, "รูปภาพ", 20, 750000)
+        value = text(value, "รูปภาพ", 20, max_bytes * 4 // 3 + 100)
         prefix, encoded = value.split(",", 1)
         if prefix not in ("data:image/png;base64", "data:image/jpeg;base64"):
             raise AppError("รองรับเฉพาะรูป PNG หรือ JPG", field="รูปภาพ")
         content = base64.b64decode(encoded, validate=True)
-        if len(content) > 500000:
+        if len(content) > max_bytes:
             raise AppError("รูปต้องไม่เกิน 500 KB กรุณาเลือกรูปขนาดเล็กลง", field="รูปภาพ")
         if content.startswith(b"\x89PNG\r\n\x1a\n"):
             offset, width, height, ended, image_data = 8, 0, 0, False, bytearray()
@@ -101,8 +101,8 @@ def image_payload(value):
                     break
                 offset = end
             decoder = zlib.decompressobj()
-            decoded = decoder.decompress(bytes(image_data), 16000001)
-            if not ended or not decoder.eof or len(decoded) > 16000000:
+            decoded = decoder.decompress(bytes(image_data), max_pixels * 8 + 1)
+            if not ended or not decoder.eof or len(decoded) > max_pixels * 8:
                 raise ValueError()
             mime = "image/png"
         elif content.startswith(b"\xff\xd8") and content.endswith(b"\xff\xd9"):
@@ -129,7 +129,7 @@ def image_payload(value):
             mime = "image/jpeg"
         else:
             raise ValueError()
-        if width <= 0 or height <= 0 or width * height > 4000000:
+        if width <= 0 or height <= 0 or width * height > max_pixels:
             raise ValueError()
         return content, mime
     except AppError:

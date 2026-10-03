@@ -1,4 +1,5 @@
 """Human-readable per-user text records derived from the shared transaction."""
+import earnings
 import json
 import re
 
@@ -23,6 +24,9 @@ def text_files(data):
         profile = {key: value for key, value in user.items() if key != "password"}
         profile["password_hash"] = user["password"]
         record = {"profile": profile, "artworks": artworks, "purchases": orders,
-                  "sales": sales, "uploads": uploads, "logs": logs}
+                  "earnings": earnings.report(data, user_id), "sales": sales, "uploads": uploads, "logs": logs,
+                  "reviews": [r for r in data.get("reviews", []) if r["user_id"] == user_id],
+                  "likes": [r for r in data.get("likes", []) if r["user_id"] == user_id],
+                  "follows": [r for r in data.get("follows", []) if r["user_id"] == user_id]}
         files[folder + "/" + user_id + ".txt"] = json.dumps(record, ensure_ascii=False, indent=2)
     return files

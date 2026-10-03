@@ -6,7 +6,7 @@ from pathlib import Path
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    files = [root / name for name in ("main.py", "server.py", "marketplace.py", "storage.py", "validation.py", "auth.py", "seed.py", "console.py", "user_files.py", "api/index.py")]
+    files = [root / name for name in ("main.py", "server.py", "marketplace.py", "storage.py", "validation.py", "auth.py", "seed.py", "console.py", "user_files.py", "social.py", "digital.py", "earnings.py", "api/index.py")]
     trees = []
     try:
         for path in files:

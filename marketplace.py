@@ -1,4 +1,7 @@
 """Business rules shared by web and CLI. All prices stored as integer satang."""
+import earnings
+import digital
+import social
 import secrets
 import time
 from datetime import datetime, timezone
@@ -78,12 +81,15 @@ def art_values(data, body, user, existing=None):
     image = body.get("image")
     if not existing or image != existing["image"]:
         image = image_owned(data, image, user)
-    return {"title": text(body.get("title"), "ชื่อผลงาน", 2, 120),
+    original = body.get("original", "")
+    if original:
+        image_owned(data, original, user, "original")
+    return {"watermarked": data["media"].get(image.removeprefix("/api?action=media&id="), {}).get("watermarked", False), "original": original, "title": text(body.get("title"), "ชื่อผลงาน", 2, 120),
             "description": text(body.get("description"), "รายละเอียด", 5, 2000), "category": category,
             "technique": text(body.get("technique"), "เทคนิค", 2, 120),
             "width": number(body.get("width"), "ความกว้าง", 1, 10000),
             "height": number(body.get("height"), "ความสูง", 1, 10000),
-            "price": money(body.get("price")), "image": image}
+            "price": money(body.get("price")), "image": image, "tags": social.tags(body.get("tags", []))}
 
 
 def calculate_total(items, code):
@@ -119,7 +125,13 @@ class Marketplace:
             artist = find(data["users"], art["artist_id"], include_deleted=True)
             if not owner and (art["status"] not in ("approved", "reserved", "sold") or not artist["active"] or artist["role"] != "artist"):
                 raise AppError("ไม่พบผลงาน", 404)
-            return {"art": art, "artist": {"id": artist["id"], "name": artist["name"], "bio": artist["bio"], "avatar": artist["avatar"]}}
+            return {"social": social.details(data, art, user), "art": art, "artist": {"id": artist["id"], "name": artist["name"], "bio": artist["bio"], "avatar": artist["avatar"]}}
+        if action == "artist_social":
+            artist = find(data["users"], query.get("id"), "ศิลปิน")
+            if artist["role"] != "artist" or not artist["active"]:
+                raise AppError("ไม่พบศิลปิน", 404)
+            followers = [f for f in data.get("follows", []) if f["artist_id"] == artist["id"] and any(u["id"] == f["user_id"] and u["active"] for u in data["users"])]
+            return {"followers": len(followers), "following": bool(user and any(f["user_id"] == user["id"] for f in followers))}
         user = current_user(data, token)
         if action == "profile":
             return {"user": public_user(user), "addresses": user.get("addresses", []), "artist_requested": user.get("artist_requested", False)}
@@ -128,6 +140,9 @@ class Marketplace:
             if action == "order":
                 return {"order": find(orders, query.get("id"), "คำสั่งซื้อ")}
             return paginate(list(reversed(orders)), query)
+        if action == "earnings":
+            current_user(data, token, ("admin", "artist"))
+            return {"items": earnings.report(data, user["id"] if user["role"] == "artist" else None)}
         if action in ("users", "logs", "dashboard"):
             current_user(data, token, ("admin",))
             if action == "users":
@@ -140,9 +155,11 @@ class Marketplace:
             artist_sales = []
             for artist in data["users"]:
                 if artist["role"] == "artist":
-                    revenue = sum(item["price"] for order in completed for item in order["items"] if item["artist_id"] == artist["id"])
-                    artist_sales.append({"name": artist["name"], "gross": revenue, "commission": (revenue * 10 + 50) // 100,
-                                         "net": revenue - (revenue * 10 + 50) // 100})
+                    ledger = earnings.report(data, artist["id"])
+                    revenue = sum(r["gross"] - r["discount"] for r in ledger)
+                    fee = sum(r["commission"] for r in ledger)
+                    artist_sales.append({"name": artist["name"], "gross": revenue, "commission": fee,
+                                         "net": revenue - fee})
             return {"revenue": sum(o["total"] for o in completed), "orders": len(data["orders"]),
                     "completed": len(completed), "pending": sum(a["status"] == "pending" and not a["deleted"] for a in data["artworks"]),
                     "users": sum(u["active"] for u in data["users"]), "artist_sales": artist_sales}
@@ -158,13 +175,15 @@ class Marketplace:
             data, _ = self.storage.load()
             user = current_user(data, token)
             kind = body.get("kind", "art")
+            if kind in ("original", "original_part"):
+                return digital.upload(self.storage, data, body, user, new_id, audit)
             if kind not in ("art", "avatar", "slip", "poster") or (kind == "art" and user["role"] != "artist") or (kind == "poster" and user["role"] != "admin"):
                 raise AppError("ไม่มีสิทธิ์อัปโหลดรูปชนิดนี้", 403)
             content, mime = image_payload(body.get("image"))
             self.storage.put_media(new_id, content)
             def store_image(data):
                 current_user(data, token)
-                data["media"][new_id] = {"owner": user["id"], "kind": kind, "mime": mime}
+                data["media"][new_id] = {"owner": user["id"], "kind": kind, "mime": mime, "watermarked": kind == "art" and body.get("watermarked") is True}
                 audit(data, user, "upload", "media", new_id)
                 return {"url": "/api?action=media&id=" + new_id}
             return self.storage.update(store_image)
@@ -218,6 +237,17 @@ class Marketplace:
                     value = find(saved, body.get("id"), "ที่อยู่")
                     saved.remove(value)
                 return {"addresses": saved}
+            if action == "payout_settle":
+                current_user(data, token, ("admin",))
+                row = next((r for r in earnings.report(data) if r["order_id"] == body.get("id") and r["artist_id"] == body.get("artist_id")), None)
+                if not row:
+                    raise AppError("ไม่พบยอดส่วนแบ่งที่พร้อมบันทึก", 404)
+                if not row["settled"]:
+                    data.setdefault("payouts", []).append({"order_id": row["order_id"], "artist_id": row["artist_id"], "net": row["net"], "time": timestamp(), "actor_id": user["id"]})
+                    audit(data, user, action, "order", row["order_id"])
+                return {"settled": True}
+            if action in ("like_set", "follow_set", "review_save"):
+                return social.change(data, action, body, user, find, audit, timestamp)
             if action in ("art_create", "art_update", "art_delete", "art_review"):
                 current_user(data, token, ("artist", "admin"))
                 if action == "art_create":
@@ -258,7 +288,7 @@ class Marketplace:
                     artist = find(data["users"], art["artist_id"])
                     if art["status"] != "approved" or not artist["active"] or artist["role"] != "artist":
                         raise AppError(f"{art['title']} ถูกจอง ขายแล้ว หรือไม่พร้อมจำหน่าย", 409)
-                    items.append({k: art[k] for k in ("id", "title", "artist_id", "price", "image")})
+                    items.append({k: art[k] for k in ("id", "title", "artist_id", "price", "image")} | {"original": art.get("original", "")})
                 shipping_address = address(body.get("address"))
                 code = text(body.get("code", ""), "รหัสส่วนลด", 0, 20).upper()
                 order = {"id": new_id, "key": key, "user_id": user["id"], "customer_name": user["name"],
@@ -367,6 +397,14 @@ class Marketplace:
         record = data["media"].get(media_id)
         if not record:
             raise AppError("ไม่พบรูปภาพ", 404)
+        if record["kind"] == "original_part":
+            raise AppError("ไม่พบรูปภาพ", 404)
+        if record["kind"] == "original":
+            user = current_user(data, token)
+            snapshot = [i["id"] for o in data["orders"] if o["user_id"] == user["id"] and o["status"] in ("paid", "shipped", "completed") for i in o["items"] if i.get("original") == "/api?action=media&id=" + media_id]
+            if user["id"] != record["owner"] and user["role"] != "admin" and not snapshot:
+                raise AppError("ยืนยันชำระเงินก่อนดาวน์โหลดไฟล์", 403)
+            return digital.content(self.storage, record), record["mime"], False
         url = "/api?action=media&id=" + media_id
         active = {u["id"] for u in data["users"] if u["active"] and u["role"] == "artist"}
         published = any(a["image"] == url and not a["deleted"] and a["status"] in ("approved", "reserved", "sold") and a["artist_id"] in active for a in data["artworks"])

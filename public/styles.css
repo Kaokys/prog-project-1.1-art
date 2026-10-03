@@ -34,3 +34,11 @@ footer{background:#111;color:#fff;border:0;padding-block:48px;gap:32px}footer .l
 @media(max-width:1000px){nav{gap:20px}}
 @media(max-width:700px){header{height:112px}.logo{font-size:27px}nav{gap:24px}.hero{margin:0}.hero-art{height:300px}.hero-art img{object-position:center 38%}.hero-art .tag{left:18px;bottom:18px;font-size:9px}.hero-copy{padding:28px 6% 38px}.hero-copy h1{font-size:45px;letter-spacing:-1px}.hero-copy p{font-size:13px;max-width:300px}.hero-copy p br{display:block}.wrap{padding-top:28px}.section-heading{margin-bottom:24px}.section-heading h1{font-size:30px}.grid{gap:28px 12px}.art-card img{padding:8px}.art-card h3{font-size:15px}.art-card p,.art-card .price{font-size:13px}.panel,.form-panel{padding:22px}.artist-card>div{padding:18px}.artist-card h3{font-size:18px}.filters button{flex:1}.stat{padding:18px}.stat strong{font-size:25px}.payment-card{padding:20px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Preview watermark also covers legacy catalogue images. Originals use private API. */
+.art-card .image,.watermarked-detail{position:relative;overflow:hidden}
+.art-card .image::after,.watermarked-detail::after{content:"SILLAPA · PREVIEW";position:absolute;top:45%;left:5%;width:90%;text-align:center;font:bold clamp(18px,3vw,40px) Arial;transform:rotate(-18deg);color:rgba(255,255,255,.55);text-shadow:0 1px 3px #000;pointer-events:none}
+.watermarked-detail .detail-image{display:block;width:100%}
+.social-controls{flex-wrap:wrap;margin-top:24px}
+
+.art-card .image.embedded-watermark::after,.watermarked-detail.embedded-watermark::after{display:none}
