@@ -19,7 +19,7 @@ def main():
         repo = "Kaokys/prog-project-1.1-art-data"
         app = Marketplace(Storage(repo=repo, token=token))
         admin = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]
-        staff = app.write("login", {"email":"benjamin.blue@demo.local", "password":"ArtDemo2026!"})["token"]
+        staff = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
         for old in app.read("catalogue", {"manage":"1", "limit":30}, admin)["items"]:
             if old["title"] == "GitHub text persistence test" and old["status"] not in ("sold", "reserved"):
                 app.write("art_delete", {"id":old["id"]}, admin)

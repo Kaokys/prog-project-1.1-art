@@ -7,7 +7,7 @@ def new_data():
     users = []
     for user_id, email, name, role, avatar in (
         ("admin", "admin@demo.local", "ผู้ดูแล SILLAPA", "admin", ""),
-        ("blue", "benjamin.blue@demo.local", "เบนจามินยาฮู", "staff", "/assets/blue.jpg"),
+        ("blue", "artist@demo.local", "เบนจามินยาฮู", "staff", "/assets/blue.jpg"),
         ("green", "benjamin.green@demo.local", "เบนจามินเทนนอสัน", "staff", "/assets/green.jpg"),
         ("customer", "customer@demo.local", "นักสะสมตัวอย่าง", "customer", "")):
         users.append({"id": user_id, "email": email, "name": name, "role": role, "avatar": avatar,

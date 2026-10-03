@@ -51,7 +51,7 @@ Repo ข้อมูลแยกจากโค้ด: https://github.com/Kaokys
 | สิทธิ์ | อีเมล |
 |---|---|
 | admin | admin@demo.local |
-| staff สีฟ้า | benjamin.blue@demo.local |
+| staff สีฟ้า | artist@demo.local |
 | staff สีเขียว | benjamin.green@demo.local |
 | customer | customer@demo.local |
 

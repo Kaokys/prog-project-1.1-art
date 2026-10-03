@@ -81,7 +81,7 @@ class HTTPTests(unittest.TestCase):
             self.assertNotIn(b"Traceback", raw)
 
     def test_server_rejects_invalid_artwork_fields_without_mutation(self):
-        status, headers, _ = self.request("/api?action=login", {"email":"benjamin.blue@demo.local", "password":"ArtDemo2026!"})
+        status, headers, _ = self.request("/api?action=login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})
         self.assertEqual(status, 200)
         cookie = headers["Set-Cookie"].split(";")[0]
         status, _, raw = self.request("/api?action=upload", {"kind":"art", "image":"data:image/png;base64," + base64.b64encode(png()).decode()}, cookie)

@@ -48,7 +48,7 @@ def main():
         else:
             data = json.loads(base64.b64decode(current["content"]))
         # Only publish the existing known demo dataset, never an arbitrary store.
-        demo = {"admin@demo.local", "benjamin.blue@demo.local", "benjamin.green@demo.local", "customer@demo.local"}
+        demo = {"admin@demo.local", "artist@demo.local", "benjamin.green@demo.local", "customer@demo.local"}
         if info["private"] and (any(u["email"] not in demo or u.get("addresses") for u in data["users"]) or data["orders"] or data["media"] or data["sessions"]):
             raise ValueError("Repo has additional data; inspect before making public")
         if current is None:

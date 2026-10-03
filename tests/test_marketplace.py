@@ -28,7 +28,7 @@ class MarketplaceTests(unittest.TestCase):
         self.storage = Storage(self.temp.name)
         self.app = Marketplace(self.storage)
         self.admin = self.login("admin@demo.local")
-        self.artist = self.login("benjamin.blue@demo.local")
+        self.artist = self.login("artist@demo.local")
         self.customer = self.login("customer@demo.local")
         self.address = {"name": "Test Buyer", "phone": "0812345678", "line": "123 Test Road", "district": "เมือง", "province": "ขอนแก่น", "postal": "40000"}
 
@@ -196,7 +196,7 @@ class MarketplaceTests(unittest.TestCase):
 from marketplace import Marketplace
 from storage import Storage
 app = Marketplace(Storage(sys.argv[1]))
-staff = app.write("login", {"email":"benjamin.blue@demo.local", "password":"ArtDemo2026!"})["token"]
+staff = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
 admin = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]
 image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + sys.argv[2]}, staff)["url"]
 art = app.write("art_create", {"title":"Restart proof", "description":"Uploaded before closing", "technique":"Digital", "width":"30.5", "height":"40", "price":"99.99", "category":"งานศิลปะ", "image":image}, staff)["art"]
@@ -226,7 +226,7 @@ print(json.dumps({"title":art["title"], "price":art["price"], "image":base64.b64
         env = os.environ | {"ART_LOCAL_DIR": self.temp.name, "ART_STORAGE": "local", "PYTHONUTF8": "1"}
         invalid_file = Path(self.temp.name) / "not-an-image.txt"
         invalid_file.write_text("ordinary text", encoding="utf-8")
-        commands = "1\nbenjamin.blue@demo.local\nArtDemo2026!\n6\n" + str(invalid_file) + "\n0\n"
+        commands = "1\nartist@demo.local\nArtDemo2026!\n6\n" + str(invalid_file) + "\n0\n"
         result = subprocess.run([sys.executable, "main.py"], input=commands, capture_output=True, text=True, encoding="utf-8", env=env, timeout=10)
         self.assertEqual(result.returncode, 0)
         self.assertNotIn("Traceback", result.stdout + result.stderr)
