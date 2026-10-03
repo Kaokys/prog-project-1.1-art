@@ -135,6 +135,7 @@ class MarketplaceTests(unittest.TestCase):
         self.app.write("order_slip", {"id": order["id"], "slip": slip}, self.customer)
         for status in ("paid", "shipped", "completed"):
             self.app.write("order_status", {"id": order["id"], "status": status, "tracking": "TEST123"}, self.admin)
+        self.assertEqual(self.app.read("order", {"id": order["id"]}, self.customer)["order"]["note"], "")
         report = self.app.read("dashboard", token=self.admin)
         self.assertEqual(report["revenue"], order["total"])
         self.assertEqual(report["completed"], 1)

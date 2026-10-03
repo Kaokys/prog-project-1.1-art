@@ -80,7 +80,7 @@ python scripts/check_rubric.py
 
 การทดสอบใช้ temporary directory แยกจากข้อมูลจริง ดู docs/RUBRIC.md, docs/TEST-RESULTS.md และ docs/PRESENTATION.md
 
-โค้ดหลัก: main.py เมนู, marketplace.py กฎธุรกิจ, validation.py ตรวจข้อมูล, auth.py สิทธิ์/session, storage.py ไฟล์ text, server.py เว็บในเครื่อง, api/index.py เว็บ Vercel
+โค้ดหลัก: main.py เมนู, marketplace.py กฎธุรกิจ, validation.py ตรวจข้อมูล, auth.py สิทธิ์/session, storage.py ไฟล์ text, user_files.py ไฟล์รายผู้ใช้, server.py เว็บในเครื่อง, api/index.py เว็บ Vercel
 
 ภาพมีมมาจากไฟล์ตัวอย่างในโปรเจกต์เดิม แหล่งต้นทางอยู่ public/assets/attributions.json ระบบนี้เป็นงานสาธิตในชั้นเรียน
 

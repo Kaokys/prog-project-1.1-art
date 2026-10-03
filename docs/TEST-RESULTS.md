@@ -2,7 +2,7 @@
 
 ## Python / HTTP / persistence
 
-รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **27 tests** ใช้ temporary directory แยกจากข้อมูลจริง
+รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **28 tests** ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -26,7 +26,7 @@
 - ย้าย database.json เดิมไป database.txt โดยไม่รีเซ็ตผลงานหรือ logs
 - function สร้างข้อมูลเริ่มต้นได้แม้ไม่มีไฟล์ public ใน runtime bundle
 
-`python scripts/check_rubric.py` ผ่าน 7 checks: 40 parameter/return functions ใน 9 Python modules และไม่มี imports นอก Standard Library
+`python scripts/check_rubric.py` ผ่าน 7 checks: 43 parameter/return functions ใน 10 Python modules และไม่มี imports นอก Standard Library
 
 ## ขอบเขตการเก็บข้อมูลปัจจุบัน
 
@@ -38,7 +38,7 @@ Repo Kaokys/prog-project-1.1-art-data เป็น public และเปิด 
 
 ทดสอบ write/read ด้วย instance ใหม่, อัปโหลด PNG 1 pixel, ส่งผลงาน/อนุมัติ, ลบแล้วเปิดอ่านใหม่ไม่ได้, audit log และ logout โดยไม่แสดง token ใน output แก้การอ่าน base64 รูปจาก GitHub ที่มี newline และเพิ่มกรณีนี้ใน test
 
-สถานะ Vercel โหมด GitHub: รอผู้ใช้ใส่ ART_GITHUB_TOKEN ใน Secret ที่เตรียมไว้สำหรับ Production/Preview แล้วจึง Redeploy และทดสอบบน URL จริง ไม่ถือว่าเว็บออนไลน์ใช้ storage ถาวรแล้วในขั้นตอนนี้
+สถานะ Vercel ปัจจุบัน: ตั้ง token แล้ว โหมด github_public ทำงานและผ่านการบันทึก/อ่านจริงจาก URL พร้อมตรวจไฟล์รายผู้ใช้ใน GitHub ดูผลทดสอบรุ่นใหม่ท้ายเอกสาร
 
 ## Browser จริงในเครื่อง
 
@@ -64,3 +64,20 @@ Repo Kaokys/prog-project-1.1-art-data เป็น public และเปิด 
 - Browser: หน้าแรกโหลดแล้ว, Login admin ผ่านหน้าปกติได้, หน้า Dashboard แสดงยอด 139.99 บาท พร้อมข้อความบอกข้อมูลชั่วคราว
 
 ภาพหลักฐานอยู่ evidence/vercel-text-dashboard.png ในเครื่อง (ไม่ push) การตรวจครั้งนี้ยืนยัน workflow ภายใน instance ที่ทดสอบ **ไม่ใช่หลักฐานการเก็บข้อมูลถาวรหรือแชร์ข้อมูลระหว่าง instance** รุ่นนี้ไม่ใช้บริการ storage ภายนอกตามขอบเขตผู้ใช้
+
+
+## Vercel จริง — ไฟล์รายผู้ใช้และการอนุมัติ (4 ตุลาคม 2026)
+
+- รุ่น 6aedcf0 Ready และ bootstrap เป็น github_public
+- python scripts/verify_live.py ผ่านจริง: Login admin@demo.local / artist@demo.local / customer@demo.local, cookie profile, server validation ราคา abc/ติดลบ/ว่าง และอัปโหลดไฟล์ปลอม
+- สร้างผลงานใหม่สำหรับทดสอบ → pending ไม่เผยแพร่ → ศิลปินอนุมัติเองได้ 403 → admin ปฏิเสธ → ศิลปินแก้ → admin อนุมัติ
+- ลูกค้าสั่งซื้อ ราคา 99.99 − ART10 10.00 + ส่ง 50.00 = 139.99 บาท; คำขอซ้ำได้ order เดิม ซื้อซ้ำเมื่อจอง/ขายแล้วได้ 409
+- อัปโหลดสลิป → customer ยืนยันเองได้ 403 → admin ปฏิเสธสลิป → ส่งใหม่ → paid → shipped → completed; ข้ามขั้นตอนถูกปฏิเสธ Dashboard เพิ่มเท่ากับ 139.99 บาท
+- admin สร้างบัญชีทดสอบแล้วลบ → session เดิมใช้ไม่ได้ / login ไม่ได้; ลบตัวเองได้ 409; log มี user_delete
+- อ่าน artist/blue.txt, customer/customer.txt, admin/admin.txt และ logs.txt จาก GitHub จริง: artwork, purchases completed, sales และ uploads ตรงกับรายการจาก Vercel; profile มี password_hash ไม่มีรหัสผ่าน plaintext หรือ raw session token
+- หลายไฟล์อัปเดตพร้อมกันผ่าน Git tree/commit และไม่ force branch; conflict test ยืนยันข้อมูลการลบจากผู้เขียนอีกคนไม่หาย
+- node tests/slip_drop.test.cjs ผ่าน: เลือกไฟล์/วางไฟล์/preview/remove, ไฟล์ผิดประเภท/ใหญ่/หลายไฟล์/ไฟล์เสีย และ feedback เมื่อ drag
+- Browser ในเครื่อง: Login customer, ไฟล์ README ถูกปฏิเสธ inline, JPG/PNG แสดง preview และเปิดปุ่มส่ง, ลบ preview แล้วปุ่มส่ง disabled, หน้ามือถือ 390px ไม่มี horizontal overflow
+- ภาพ evidence/payment-page.png และรายงาน evidence/live-check.json เก็บในเครื่อง ไม่บันทึก cookie/token และไม่ push
+
+ไฟล์รายผู้ใช้เป็นสำเนาที่อ่านสะดวกของ transaction ใน database.txt เว็บใช้ database.txt เป็นข้อมูลหลัก จึงไม่ต้องอ่านหลายไฟล์ต่อ request การลบ user เป็น soft delete เพื่อคงประวัติคำสั่งซื้อและ log

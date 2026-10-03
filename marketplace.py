@@ -237,7 +237,7 @@ class Marketplace:
                         if body.get("status") not in ("approved", "rejected"):
                             raise AppError("สถานะอนุมัติไม่ถูกต้อง")
                         art["status"] = body["status"]
-                        art["note"] = text(body.get("note", ""), "เหตุผล", 0, 500)
+                        art["note"] = text(body.get("note", ""), "เหตุผล", 3 if art["status"] == "rejected" else 0, 500)
                     else:
                         owner = find(data["users"], art["artist_id"], include_deleted=True)
                         art.update(art_values(data, body, owner, art))
@@ -278,6 +278,7 @@ class Marketplace:
                         raise AppError("คำสั่งซื้อไม่ได้อยู่ในสถานะรอชำระ", 409)
                     order["slip"] = image_owned(data, body.get("slip"), user, "slip")
                     order["status"] = "payment_review"
+                    order["note"] = ""
                 else:
                     status = text(body.get("status"), "สถานะ", 1, 30)
                     if status == "cancelled":
@@ -294,6 +295,7 @@ class Marketplace:
                             order["note"] = text(body.get("note"), "เหตุผล", 3, 500)
                             order["slip"] = ""
                         if status == "paid":
+                            order["note"] = ""
                             for item in order["items"]:
                                 find(data["artworks"], item["id"])["status"] = "sold"
                         if status == "shipped":
