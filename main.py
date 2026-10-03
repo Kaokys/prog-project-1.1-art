@@ -88,9 +88,9 @@ def run_action(app, menu, user, token):
     elif menu == "5":
         return app.write("profile_save", {"name": ask("ชื่อ") or "", "bio": ask("ประวัติ") or "",
                          "artist_requested": choose("ขอเป็นศิลปิน? 1=ใช่ 0=ไม่", {"0", "1"}) == "1"}, token)
-    elif menu == "6" and user["role"] == "staff":
+    elif menu == "6" and user["role"] == "artist":
         return app.write("art_create", artwork_form(app, token), token)
-    elif menu == "7" and user["role"] in ("staff", "admin"):
+    elif menu == "7" and user["role"] in ("artist", "admin"):
         show_catalogue(app, token, True)
         item_id = ask("รหัสผลงานที่จะลบ") or ""
         if choose("ยืนยันลบ? 1=ลบ 0=ยกเลิก", {"0", "1"}) == "1":
@@ -137,7 +137,7 @@ def main():
                 user, token = result["user"], result["token"]
                 output("เข้าสู่ระบบแล้ว: " + user["name"] + " (" + user["role"] + ")")
             else:
-                output("\n1 ดูผลงาน  2 คำสั่งซื้อ  3 สั่งซื้อ  4 แนบสลิป  5 โปรไฟล์\n6 อัปโหลดผลงาน (staff)  7 ลบผลงาน (staff/admin)\n8 อนุมัติผลงาน  9 เปลี่ยนสถานะออเดอร์  10 รายงาน  11 Log (admin)\n12 Logout  0 ออกจากโปรแกรม")
+                output("\n1 ดูผลงาน  2 คำสั่งซื้อ  3 สั่งซื้อ  4 แนบสลิป  5 โปรไฟล์\n6 อัปโหลดผลงาน (artist)  7 ลบผลงาน (artist/admin)\n8 อนุมัติผลงาน  9 เปลี่ยนสถานะออเดอร์  10 รายงาน  11 Log (admin)\n12 Logout  0 ออกจากโปรแกรม")
                 menu = choose("เลือกเมนู", {str(n) for n in range(13)})
                 if menu == "0":
                     break

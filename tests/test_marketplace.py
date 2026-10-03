@@ -153,7 +153,7 @@ class MarketplaceTests(unittest.TestCase):
         created = self.app.write("user_create", {"name": "Disposable user", "email": "delete@example.test",
                     "password": "StrongPass123", "role": "customer", "active": True}, self.admin)["user"]
         token = self.app.write("login", {"email": created["email"], "password": "StrongPass123"})["token"]
-        self.app.write("user_update", created | {"role": "staff"}, self.admin)
+        self.app.write("user_update", created | {"role": "artist"}, self.admin)
         root = Path(self.temp.name)
         self.assertFalse((root / "customer" / (created["id"] + ".txt")).exists())
         self.assertTrue((root / "artist" / (created["id"] + ".txt")).exists())
@@ -182,7 +182,7 @@ class MarketplaceTests(unittest.TestCase):
         self.app.write("category_update", {"name": "Temporary category", "replacement": "Renamed category"}, self.admin)
         self.app.write("category_delete", {"name": "Renamed category"}, self.admin)
         self.fails(409, lambda: self.app.write("category_delete", {"name": "งานศิลปะ"}, self.admin))
-        created = self.app.write("user_create", {"name": "New Staff", "email": "staff@example.test", "password": "StrongPass123", "role": "staff", "active": True}, self.admin)["user"]
+        created = self.app.write("user_create", {"name": "New Artist", "email": "artist@example.test", "password": "StrongPass123", "role": "artist", "active": True}, self.admin)["user"]
         token = self.app.write("login", {"email": created["email"], "password": "StrongPass123"})["token"]
         self.app.write("user_update", created | {"role": "customer"}, self.admin)
         self.fails(401, lambda: self.app.read("profile", token=token))
@@ -222,10 +222,10 @@ class MarketplaceTests(unittest.TestCase):
 from marketplace import Marketplace
 from storage import Storage
 app = Marketplace(Storage(sys.argv[1]))
-staff = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
+artist = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
 admin = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]
-image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + sys.argv[2]}, staff)["url"]
-art = app.write("art_create", {"title":"Restart proof", "description":"Uploaded before closing", "technique":"Digital", "width":"30.5", "height":"40", "price":"99.99", "category":"งานศิลปะ", "image":image}, staff)["art"]
+image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + sys.argv[2]}, artist)["url"]
+art = app.write("art_create", {"title":"Restart proof", "description":"Uploaded before closing", "technique":"Digital", "width":"30.5", "height":"40", "price":"99.99", "category":"งานศิลปะ", "image":image}, artist)["art"]
 app.write("art_review", {"id":art["id"], "status":"approved"}, admin)
 print(json.dumps({"id":art["id"], "media":image.split("id=")[1]}))
 '''

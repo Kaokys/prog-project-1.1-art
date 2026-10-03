@@ -19,20 +19,20 @@ def main():
         repo = "Kaokys/prog-project-1.1-art-data"
         app = Marketplace(Storage(repo=repo, token=token))
         admin = app.write("login", {"email":"admin@demo.local", "password":"ArtDemo2026!"})["token"]
-        staff = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
+        artist = app.write("login", {"email":"artist@demo.local", "password":"ArtDemo2026!"})["token"]
         for old in app.read("catalogue", {"manage":"1", "limit":30}, admin)["items"]:
             if old["title"] == "GitHub text persistence test" and old["status"] not in ("sold", "reserved"):
                 app.write("art_delete", {"id":old["id"]}, admin)
         def chunk(kind, value):
             return struct.pack(">I", len(value)) + kind + value + struct.pack(">I", zlib.crc32(kind + value) & 0xffffffff)
         png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB",1,1,8,2,0,0,0)) + chunk(b"IDAT",zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND",b"")
-        image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + base64.b64encode(png).decode()}, staff)["url"]
-        art = app.write("art_create", {"title":"GitHub text persistence test", "description":"A one-pixel classroom test", "technique":"Digital", "width":"1", "height":"1", "price":"1", "category":"งานศิลปะ", "image":image}, staff)["art"]
+        image = app.write("upload", {"kind":"art", "image":"data:image/png;base64," + base64.b64encode(png).decode()}, artist)["url"]
+        art = app.write("art_create", {"title":"GitHub text persistence test", "description":"A one-pixel classroom test", "technique":"Digital", "width":"1", "height":"1", "price":"1", "category":"งานศิลปะ", "image":image}, artist)["art"]
         app.write("art_review", {"id":art["id"], "status":"approved"}, admin)
         reopened = Marketplace(Storage(repo=repo, token=token))
         if reopened.read("art", {"id":art["id"]})["art"]["price"] != 100 or reopened.media(image.split("id=")[1])[0] != png:
             raise ValueError("Reopened file contents differ")
-        app.write("art_delete", {"id":art["id"]}, staff)
+        app.write("art_delete", {"id":art["id"]}, artist)
         try:
             reopened.read("art", {"id":art["id"]})
             raise ValueError("Deleted artwork returned")
@@ -42,7 +42,7 @@ def main():
         logs = reopened.read("logs", token=admin)["items"]
         if not any(row["item_id"] == art["id"] and row["action"] == "art_delete" for row in logs):
             raise ValueError("Missing audit log")
-        app.write("logout", {}, staff)
+        app.write("logout", {}, artist)
         app.write("logout", {}, admin)
         print("PASS GitHub public database.txt: write, new instance read, image bytes, approval, deletion persistence, audit log, logout")
         print("ไฟล์ทดสอบ 1 pixel เป็นข้อมูลสาธิต ผู้อ่าน repo public มองเห็นได้ ไม่มี token ถูกพิมพ์หรือบันทึกใน repo")

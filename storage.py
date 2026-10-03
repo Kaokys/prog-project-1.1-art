@@ -106,6 +106,14 @@ class Storage:
         keys = {"users", "sessions", "artworks", "orders", "media", "categories", "logs", "settings", "login_attempts"}
         if not isinstance(data, dict) or not keys.issubset(data) or data.get("version") != 1:
             raise ValueError("Invalid data format")
+        # Read existing coursework files without resetting accounts or sessions.
+        # The next transaction persists the renamed role and per-user records.
+        for user in data["users"]:
+            if user.get("role") == "staff":
+                user["role"] = "artist"
+                data["logs"].append({"id": "role-artist-" + user["id"], "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "actor": "ระบบ", "actor_id": "system", "action": "role_migrate", "entity": "user",
+                    "item_id": user["id"], "before": "staff", "after": "artist"})
         return True
 
     def save(self, data, version=None):

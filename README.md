@@ -14,7 +14,7 @@ python server.py 3200
 
 ## ครบ 6 ข้อ
 
-1. สมัครสมาชิก / Login / Logout และสิทธิ์ admin, staff, customer ตรวจที่เซิร์ฟเวอร์
+1. สมัครสมาชิก / Login / Logout และสิทธิ์ admin, artist, customer ตรวจที่เซิร์ฟเวอร์
 2. CRUD ผลงาน หมวดหมู่ ผู้ใช้ พร้อม validation ราคา ขนาด ข้อความ และไฟล์รูป
 3. ค้นหา กรองหมวด ศิลปิน ราคา เรียงลำดับ และแบ่งหน้า
 4. Dashboard ยอดขาย คำสั่งซื้อ ผลงานรออนุมัติ และรายงานศิลปิน
@@ -51,11 +51,11 @@ Repo ข้อมูลแยกจากโค้ด: https://github.com/Kaokys
 | สิทธิ์ | อีเมล |
 |---|---|
 | admin | admin@demo.local |
-| staff สีฟ้า | artist@demo.local |
-| staff สีเขียว | benjamin.green@demo.local |
+| artist สีฟ้า | artist@demo.local |
+| artist สีเขียว | benjamin.green@demo.local |
 | customer | customer@demo.local |
 
-สมัครใหม่ได้เฉพาะ customer; admin เปลี่ยนสิทธิ์เป็น staff ได้ QR เป็นภาพสาธิตเท่านั้น ห้ามโอนเงินจริง
+สมัครใหม่ได้เฉพาะ customer; admin เปลี่ยนสิทธิ์เป็น artist ได้ QR เป็นภาพสาธิตเท่านั้น ห้ามโอนเงินจริง
 
 ## ขึ้น Vercel
 

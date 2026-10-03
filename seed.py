@@ -7,11 +7,11 @@ def new_data():
     users = []
     for user_id, email, name, role, avatar in (
         ("admin", "admin@demo.local", "ผู้ดูแล SILLAPA", "admin", ""),
-        ("blue", "artist@demo.local", "เบนจามินยาฮู", "staff", "/assets/blue.jpg"),
-        ("green", "benjamin.green@demo.local", "เบนจามินเทนนอสัน", "staff", "/assets/green.jpg"),
+        ("blue", "artist@demo.local", "เบนจามินยาฮู", "artist", "/assets/blue.jpg"),
+        ("green", "benjamin.green@demo.local", "เบนจามินเทนนอสัน", "artist", "/assets/green.jpg"),
         ("customer", "customer@demo.local", "นักสะสมตัวอย่าง", "customer", "")):
         users.append({"id": user_id, "email": email, "name": name, "role": role, "avatar": avatar,
-                      "bio": "ศิลปินมีม — โปรเจกต์สาธิต" if role == "staff" else "", "password": password, "active": True})
+                      "bio": "ศิลปินมีม — โปรเจกต์สาธิต" if role == "artist" else "", "password": password, "active": True})
     titles = ("Benjamin Approves", "Ben 10 Stare", "Big Yahu Dance", "Ben 10 Confused", "Tel Aviv Impressed", "Gwen Huh?")
     # Keep seed metadata with Python code: public files are served separately
     # by Vercel and are not guaranteed to be in the function filesystem.

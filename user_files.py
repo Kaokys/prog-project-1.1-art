@@ -4,7 +4,7 @@ import re
 
 
 def text_files(data):
-    folders = {"staff": "artist", "customer": "customer", "admin": "admin"}
+    folders = {"artist": "artist", "customer": "customer", "admin": "admin"}
     files = {"logs.txt": json.dumps(data["logs"], ensure_ascii=False, indent=2)}
     for user in data["users"]:
         user_id = str(user["id"])

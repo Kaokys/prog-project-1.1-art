@@ -47,7 +47,7 @@ def main():
     admin, artist, customer = clients
     report = {"base": base, "checks": []}
     try:
-        for client, mail, role in zip(clients, ("admin@demo.local", "artist@demo.local", "customer@demo.local"), ("admin", "staff", "customer")):
+        for client, mail, role in zip(clients, ("admin@demo.local", "artist@demo.local", "customer@demo.local"), ("admin", "artist", "customer")):
             assert client.call("login", {"email": mail, "password": "ArtDemo2026!"})["user"]["role"] == role
             assert client.call("profile")["user"]["email"] == mail
         report["checks"].append("three logins and persistent sessions")

@@ -35,9 +35,9 @@ def paginate(items, query):
 
 def catalogue(data, query, user=None):
     managed = query.get("manage") == "1"
-    if managed and (not user or user["role"] not in ("staff", "admin")):
+    if managed and (not user or user["role"] not in ("artist", "admin")):
         raise AppError("ไม่มีสิทธิ์จัดการผลงาน", 403)
-    active_artists = {u["id"] for u in data["users"] if u["active"] and u["role"] == "staff"}
+    active_artists = {u["id"] for u in data["users"] if u["active"] and u["role"] == "artist"}
     items = [dict(art) for art in data["artworks"] if not art["deleted"] and (
         (managed and (user["role"] == "admin" or art["artist_id"] == user["id"])) or
         (not managed and art["status"] in ("approved", "reserved", "sold") and art["artist_id"] in active_artists))]
@@ -105,7 +105,7 @@ class Marketplace:
         data, _ = self.storage.load()
         user = current_user(data, token, required=False)
         if action == "bootstrap":
-            artists = [public_user(u) for u in data["users"] if u["role"] == "staff" and u["active"]]
+            artists = [public_user(u) for u in data["users"] if u["role"] == "artist" and u["active"]]
             for artist in artists:
                 artist.pop("email", None)
             return {"user": public_user(user) if user else None, "artists": artists,
@@ -117,7 +117,7 @@ class Marketplace:
             art = find(data["artworks"], query.get("id"), "ผลงาน")
             owner = user and (user["role"] == "admin" or user["id"] == art["artist_id"])
             artist = find(data["users"], art["artist_id"], include_deleted=True)
-            if not owner and (art["status"] not in ("approved", "reserved", "sold") or not artist["active"] or artist["role"] != "staff"):
+            if not owner and (art["status"] not in ("approved", "reserved", "sold") or not artist["active"] or artist["role"] != "artist"):
                 raise AppError("ไม่พบผลงาน", 404)
             return {"art": art, "artist": {"id": artist["id"], "name": artist["name"], "bio": artist["bio"], "avatar": artist["avatar"]}}
         user = current_user(data, token)
@@ -139,7 +139,7 @@ class Marketplace:
             completed = [o for o in data["orders"] if o["status"] == "completed"]
             artist_sales = []
             for artist in data["users"]:
-                if artist["role"] == "staff":
+                if artist["role"] == "artist":
                     revenue = sum(item["price"] for order in completed for item in order["items"] if item["artist_id"] == artist["id"])
                     artist_sales.append({"name": artist["name"], "gross": revenue, "commission": (revenue * 10 + 50) // 100,
                                          "net": revenue - (revenue * 10 + 50) // 100})
@@ -158,7 +158,7 @@ class Marketplace:
             data, _ = self.storage.load()
             user = current_user(data, token)
             kind = body.get("kind", "art")
-            if kind not in ("art", "avatar", "slip", "poster") or (kind == "art" and user["role"] != "staff") or (kind == "poster" and user["role"] != "admin"):
+            if kind not in ("art", "avatar", "slip", "poster") or (kind == "art" and user["role"] != "artist") or (kind == "poster" and user["role"] != "admin"):
                 raise AppError("ไม่มีสิทธิ์อัปโหลดรูปชนิดนี้", 403)
             content, mime = image_payload(body.get("image"))
             self.storage.put_media(new_id, content)
@@ -219,9 +219,9 @@ class Marketplace:
                     saved.remove(value)
                 return {"addresses": saved}
             if action in ("art_create", "art_update", "art_delete", "art_review"):
-                current_user(data, token, ("staff", "admin"))
+                current_user(data, token, ("artist", "admin"))
                 if action == "art_create":
-                    current_user(data, token, ("staff",))
+                    current_user(data, token, ("artist",))
                     art = art_values(data, body, user) | {"id": new_id, "artist_id": user["id"], "status": "pending", "deleted": False}
                     data["artworks"].append(art)
                 else:
@@ -256,7 +256,7 @@ class Marketplace:
                 for art_id in ids:
                     art = find(data["artworks"], art_id, "ผลงาน")
                     artist = find(data["users"], art["artist_id"])
-                    if art["status"] != "approved" or not artist["active"] or artist["role"] != "staff":
+                    if art["status"] != "approved" or not artist["active"] or artist["role"] != "artist":
                         raise AppError(f"{art['title']} ถูกจอง ขายแล้ว หรือไม่พร้อมจำหน่าย", 409)
                     items.append({k: art[k] for k in ("id", "title", "artist_id", "price", "image")})
                 shipping_address = address(body.get("address"))
@@ -368,7 +368,7 @@ class Marketplace:
         if not record:
             raise AppError("ไม่พบรูปภาพ", 404)
         url = "/api?action=media&id=" + media_id
-        active = {u["id"] for u in data["users"] if u["active"] and u["role"] == "staff"}
+        active = {u["id"] for u in data["users"] if u["active"] and u["role"] == "artist"}
         published = any(a["image"] == url and not a["deleted"] and a["status"] in ("approved", "reserved", "sold") and a["artist_id"] in active for a in data["artworks"])
         public = published or data["settings"]["poster"] == url or any(u["active"] and u["avatar"] == url for u in data["users"])
         user = current_user(data, token, required=False)

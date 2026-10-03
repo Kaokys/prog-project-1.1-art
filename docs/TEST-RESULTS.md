@@ -2,7 +2,7 @@
 
 ## Python / HTTP / persistence
 
-รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **28 tests** ใช้ temporary directory แยกจากข้อมูลจริง
+รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **29 tests** ใช้ temporary directory แยกจากข้อมูลจริง
 
 - แปลงชนิดและปฏิเสธ abc/ช่องว่าง/ติดลบ/NaN/Infinity/bool ที่ไม่ถูกชนิด
 - Register ปฏิเสธการฉีด role; login/logout และ session ยังคงใช้ได้เมื่อเปิด storage ใหม่
@@ -55,12 +55,12 @@ Repo Kaokys/prog-project-1.1-art-data เป็น public และเปิด 
 
 ตรวจรุ่นไฟล์ text แล้ว: bootstrap HTTP 200, storage=temporary_text, รูปตัวอย่างโหลดได้ และไม่มี error ขอ ART_STORAGE
 
-- API: Login ทั้ง admin/staff/customer และเรียก profile ด้วย cookie ได้
+- API: Login ทั้ง admin/artist/customer และเรียก profile ด้วย cookie ได้
 - อัปโหลด JPG, ปฏิเสธราคา abc ฝั่งเซิร์ฟเวอร์, สร้าง/อ่าน/แก้/อนุมัติผลงาน, ค้นหา/เรียงราคา/แบ่งหน้า
 - Customer สั่งงานราคา 99.99 บาท ลด ART10 10.00 บาท + ค่าส่ง 50.00 บาท = **139.99 บาท**
 - แนบสลิปสาธิต → admin paid → shipped DEMO-TEXT-123 → completed; ยอด Dashboard ตรงกัน
 - ลบ pending artwork แล้วอ่านไม่ได้; ลบ sold artwork ได้ 409
-- Log มีรายการแก้ผลงาน; customer เข้า dashboard ได้ 403; staff เปิดออเดอร์ของ customer ได้ 404; logout ผ่าน
+- Log มีรายการแก้ผลงาน; customer เข้า dashboard ได้ 403; artist เปิดออเดอร์ของ customer ได้ 404; logout ผ่าน
 - Browser: หน้าแรกโหลดแล้ว, Login admin ผ่านหน้าปกติได้, หน้า Dashboard แสดงยอด 139.99 บาท พร้อมข้อความบอกข้อมูลชั่วคราว
 
 ภาพหลักฐานอยู่ evidence/vercel-text-dashboard.png ในเครื่อง (ไม่ push) การตรวจครั้งนี้ยืนยัน workflow ภายใน instance ที่ทดสอบ **ไม่ใช่หลักฐานการเก็บข้อมูลถาวรหรือแชร์ข้อมูลระหว่าง instance** รุ่นนี้ไม่ใช้บริการ storage ภายนอกตามขอบเขตผู้ใช้
@@ -81,3 +81,5 @@ Repo Kaokys/prog-project-1.1-art-data เป็น public และเปิด 
 - ภาพ evidence/payment-page.png และรายงาน evidence/live-check.json เก็บในเครื่อง ไม่บันทึก cookie/token และไม่ push
 
 ไฟล์รายผู้ใช้เป็นสำเนาที่อ่านสะดวกของ transaction ใน database.txt เว็บใช้ database.txt เป็นข้อมูลหลัก จึงไม่ต้องอ่านหลายไฟล์ต่อ request การลบ user เป็น soft delete เพื่อคงประวัติคำสั่งซื้อและ log
+
+รุ่น role ใหม่ใช้ admin / artist / customer; ทดสอบ migration role เดิมเป็น artist โดย password hash, artwork ownership และข้อมูลเดิมไม่เปลี่ยน พร้อม role_migrate log; QR แสดงเฉพาะพื้นที่รหัสพร้อมขอบขาว

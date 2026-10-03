@@ -25,7 +25,7 @@
 
 | หัวข้อ | การสาธิต |
 |---|---|
-| Register/Login/Roles | สมัครได้ customer; staff อัปโหลด; admin อนุมัติ/จัดการผู้ใช้ |
+| Register/Login/Roles | สมัครได้ customer; artist อัปโหลด; admin อนุมัติ/จัดการผู้ใช้ |
 | CRUD + validation | สร้าง/ดู/แก้/ลบผลงาน หมวด ผู้ใช้ ที่อยู่; ตรวจข้อมูลที่ Python ทุก write |
 | Search/filter/sort/page | หน้า งานศิลปะ + max price + artist/category + sort + pagination; ชุดทดสอบใช้ limit=2 |
 | Dashboard | #portal ของ admin: completed revenue, orders, pending, users, artist sales |

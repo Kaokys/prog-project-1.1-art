@@ -10,6 +10,25 @@ from storage import Storage
 
 
 class TextStorageTests(unittest.TestCase):
+    def test_legacy_artist_role_preserves_password_ownership_and_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = new_data()
+            user = next(u for u in data["users"] if u["id"] == "blue")
+            original_hash = user["password"]
+            user["role"] = "staff"
+            path = Path(directory) / "database.txt"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            app = Marketplace(Storage(directory))
+            result = app.write("login", {"email": "artist@demo.local", "password": "ArtDemo2026!"})
+            self.assertEqual(result["user"]["role"], "artist")
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            account = next(u for u in saved["users"] if u["id"] == "blue")
+            self.assertEqual(account["password"], original_hash)
+            self.assertEqual(account["role"], "artist")
+            self.assertEqual(saved["artworks"], data["artworks"])
+            self.assertTrue(any(row["action"] == "role_migrate" and row["item_id"] == "blue" for row in saved["logs"]))
+            self.assertTrue((Path(directory) / "artist/blue.txt").exists())
+
     def test_seed_does_not_require_public_files_in_function_bundle(self):
         with patch("pathlib.Path.open", side_effect=OSError("Public files absent")):
             data = new_data()

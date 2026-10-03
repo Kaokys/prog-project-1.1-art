@@ -5,7 +5,7 @@ import secrets
 import time
 from validation import AppError, text
 
-ROLES = ("admin", "staff", "customer")  # tuple: finite allowed roles
+ROLES = ("admin", "artist", "customer")  # tuple: finite allowed roles
 
 
 def hash_password(password):
