@@ -42,3 +42,4 @@ footer{background:#111;color:#fff;border:0;padding-block:48px;gap:32px}footer .l
 .social-controls{flex-wrap:wrap;margin-top:24px}
 
 .art-card .image.embedded-watermark::after,.watermarked-detail.embedded-watermark::after{display:none}
+.order-item>div{min-width:0;overflow-wrap:anywhere}.order-item>img{flex-shrink:0}.order-item>div>a{text-decoration:underline;text-underline-offset:3px}.filters>.error{flex-basis:100%}

@@ -5,6 +5,7 @@ import social
 import secrets
 import time
 from datetime import datetime, timezone
+from decimal import Decimal
 from auth import ROLES, create_session, current_user, hash_password, public_user, token_key, verify_password
 from validation import AppError, address, boolean, email, image_payload, money, number, text
 
@@ -45,13 +46,23 @@ def catalogue(data, query, user=None):
         (managed and (user["role"] == "admin" or art["artist_id"] == user["id"])) or
         (not managed and art["status"] in ("approved", "reserved", "sold") and art["artist_id"] in active_artists))]
     search = str(query.get("q", "")).strip().casefold()
+    minimum = number(query.get("min", 0), "ราคาต่ำสุด", 0)
     maximum = number(query.get("max", 1000000), "ราคาสูงสุด", 0)
-    items = [art for art in items if (not search or search in (art["title"] + " " + art["description"]).casefold())
+    if minimum > maximum:
+        raise AppError("ราคาสูงสุดต้องไม่น้อยกว่าราคาต่ำสุด", field="ราคาสูงสุด")
+    lower = Decimal(str(query.get("min", 0))) * 100
+    upper = Decimal(str(query.get("max", 1000000))) * 100
+    sort = query.get("sort", "newest")
+    if sort not in ("newest", "price_asc", "price_desc"):
+        raise AppError("กรุณาเลือกการเรียงลำดับที่ถูกต้อง", field="เรียงตาม")
+    if query.get("status") and query["status"] not in ("pending", "approved", "reserved", "sold", "rejected"):
+        raise AppError("สถานะผลงานไม่ถูกต้อง", field="สถานะ")
+    artist_names = {u["id"]: u["name"] for u in data["users"]}
+    items = [art for art in items if (not search or search in " ".join((art["title"], art["description"], artist_names.get(art["artist_id"], ""), " ".join(art.get("tags", [])))).casefold())
              and (not query.get("category") or art["category"] == query["category"])
              and (not query.get("artist") or art["artist_id"] == query["artist"])
              and (not query.get("status") or art["status"] == query["status"])
-             and art["price"] <= maximum * 100]
-    sort = query.get("sort", "newest")
+             and lower <= art["price"] <= upper]
     if sort == "price_asc":
         items.sort(key=lambda item: item["price"])
     elif sort == "price_desc":
@@ -304,6 +315,8 @@ class Marketplace:
                 if order["user_id"] != user["id"] and user["role"] != "admin":
                     raise AppError("ไม่พบคำสั่งซื้อ", 404)
                 if action == "order_slip":
+                    if order["user_id"] != user["id"]:
+                        raise AppError("เฉพาะเจ้าของคำสั่งซื้อเท่านั้นที่ส่งหลักฐานชำระเงินได้", 403)
                     if order["status"] != "pending_payment":
                         raise AppError("คำสั่งซื้อไม่ได้อยู่ในสถานะรอชำระ", 409)
                     order["slip"] = image_owned(data, body.get("slip"), user, "slip")

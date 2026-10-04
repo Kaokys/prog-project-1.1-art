@@ -114,6 +114,39 @@ class MarketplaceTests(unittest.TestCase):
         self.assertEqual([a["price"] for a in found["items"]], sorted(a["price"] for a in found["items"]))
         self.fails(400, lambda: self.app.read("catalogue", {"page": "wrong"}))
 
+    def test_price_range_search_tags_artist_and_invalid_options(self):
+        def prepare(data):
+            data["artworks"][0].update(price=29, tags=["unique_tag"])
+            data["artworks"][1].update(status="pending", tags=["unique_tag"])
+        self.storage.update(prepare)
+        found = self.app.read("catalogue", {"min": "0.29", "max": "0.29", "q": "UNIQUE_TAG", "artist": "blue"})
+        self.assertEqual([a["id"] for a in found["items"]], ["art-1"])
+        self.assertEqual(self.app.read("catalogue", {"max": "0"})["total"], 0)
+        artist_name = self.app.read("art", {"id": "art-1"})["artist"]["name"]
+        self.assertTrue(all(a["artist_id"] == "blue" for a in self.app.read("catalogue", {"q": artist_name})["items"]))
+        self.assertEqual(self.app.read("catalogue", {"q": "unique_tag"})["total"], 1)
+        for query in ({"min": "abc"}, {"max": -1}, {"min": 90, "max": 30}, {"sort": "wrong"}, {"status": "wrong"}):
+            self.fails(400, lambda: self.app.read("catalogue", query))
+
+    def test_admin_cannot_submit_customer_slip_and_orders_are_scoped(self):
+        order = self.order()
+        admin_slip = self.upload("slip", self.admin)
+        before, _ = self.storage.load()
+        self.fails(403, lambda: self.app.write("order_slip", {"id": order["id"], "slip": admin_slip}, self.admin))
+        after, _ = self.storage.load()
+        self.assertEqual(before, after)
+        second = self.app.write("register", {"name": "Second buyer", "email": "second@example.test", "password": "LongPassword123!"})["token"]
+        second_order = self.app.write("order_create", {"items": ["art-2"], "key": "second-order-key", "address": self.address}, second)["order"]
+        self.assertEqual([o["id"] for o in self.app.read("orders", token=second)["items"]], [second_order["id"]])
+        self.assertEqual([o["id"] for o in self.app.read("orders", token=self.customer)["items"]], [order["id"]])
+        self.assertEqual(self.app.read("orders", token=self.admin)["total"], 2)
+        self.fails(404, lambda: self.app.write("order_slip", {"id": order["id"], "slip": admin_slip}, second))
+        customer_slip = self.upload("slip", self.customer)
+        self.fails(403, lambda: self.app.write("order_slip", {"id": order["id"], "slip": customer_slip}, self.admin))
+        self.app.write("order_slip", {"id": order["id"], "slip": customer_slip}, self.customer)
+        self.app.write("order_status", {"id": order["id"], "status": "paid"}, self.admin)
+        self.assertEqual(self.app.read("order", {"id": order["id"]}, self.customer)["order"]["status"], "paid")
+
     def test_checkout_totals_reservation_duplicates_and_cancellation(self):
         order = self.order()
         self.assertEqual(order["total"], 7700)
