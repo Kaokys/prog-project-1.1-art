@@ -82,6 +82,20 @@ class ExtrasTests(unittest.TestCase):
         self.store.update(lambda d: d['artworks'][1].update(status='pending', tags=['blue']))
         self.assertNotIn('art-2', [a['id'] for a in self.app.read('art', {'id':'art-1'})['social']['similar']])
 
+    def test_high_resolution_original_and_corrupt_parts(self):
+        import struct
+        import zlib
+        from validation import image_payload
+        def chunk(kind, value):
+            return struct.pack('>I',len(value))+kind+value+struct.pack('>I',zlib.crc32(kind+value)&0xffffffff)
+        raw = b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',2048,2048,8,2,0,0,0))+chunk(b'IDAT',zlib.compress((b'\x00'+b'\x10\x20\x30'*2048)*2048))+chunk(b'IEND',b'')
+        value = 'data:image/png;base64,'+base64.b64encode(raw).decode()
+        self.fails(400, lambda: image_payload(value))
+        self.assertEqual(image_payload(value,8000000,36000000)[0],raw)
+        mid = self.write('upload',{'kind':'original_part','image':base64.b64encode(b'not an image').decode()},'artist')['id']
+        self.fails(400,lambda:self.write('upload',{'kind':'original','parts':[mid],'mime':'image/png'},'artist'))
+        self.fails(400,lambda:self.write('upload',{'kind':'original','parts':[mid,mid],'mime':'image/png'},'artist'))
+
     def test_settle_idempotency_and_artist_isolation(self):
         aid = self.app.read('profile', token=self.tokens['artist'])['user']['id']
         uid = self.app.read('profile', token=self.tokens['customer'])['user']['id']
