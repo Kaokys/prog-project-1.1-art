@@ -1,5 +1,15 @@
 # ผลทดสอบ — 4 ตุลาคม 2026
 
+## ผลล่าสุด — โค้ด 6af77d6
+
+- Python unittest **44 tests ผ่าน** จากรอบ debug ล่าสุด รวม session/การเปลี่ยนสิทธิ์, คำขอศิลปิน, 31 ผลงานแบ่งหน้า และหน้าท้ายหลังลบรายการ
+- `tests/remaining_ui.test.cjs` **11 เคสผ่าน** พร้อม `tests/order_ui.test.cjs` และ `tests/slip_drop.test.cjs` ที่ผ่าน
+- ตรวจเกณฑ์ static ซ้ำวันที่ 4 ตุลาคม: **7 checks ผ่าน**, 52 ฟังก์ชันที่มีพารามิเตอร์และ return ใน 13 ไฟล์ Python; Standard Library เท่านั้น
+- ตรวจ Vercel หลัง Push: admin profile ไม่มีคำขอศิลปินซ้ำ; ฟอร์ม admin edit ไม่มี upload ที่ไม่มีสิทธิ์; เลขหน้าที่เกินช่วงกลับหน้าสุดท้ายที่มีข้อมูล
+- รายละเอียดการทดสอบจริง/การจำลองและขอบเขตหลักฐาน: REMAINING_DEBUG_REPORT.md, ORDER_DEBUG_REPORT.md
+
+ส่วนด้านล่างเป็นผลของรุ่นก่อนหน้า ตัวเลข tests/functions ของแต่ละรุ่นไม่ใช่จำนวนล่าสุด
+
 ## Python / HTTP / persistence
 
 รุ่น GitHub public text: `python -m unittest discover -s tests -v` ผ่าน **29 tests** ใช้ temporary directory แยกจากข้อมูลจริง
