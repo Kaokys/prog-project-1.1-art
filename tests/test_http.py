@@ -1,5 +1,7 @@
 import base64
 import json
+import struct
+import zlib
 import tempfile
 import threading
 import unittest
@@ -106,6 +108,39 @@ class HTTPTests(unittest.TestCase):
         self.assertNotIn(b"Traceback", raw)
         status, _, _ = self.request("/api?action=order_status", {"id":order_id, "status":"cancelled"}, customer_cookie)
         self.assertEqual(status, 200)
+
+    def test_forged_png_scanlines_are_rejected_by_server(self):
+        status, headers, _ = self.request('/api?action=login', {'email':'artist@demo.local','password':'ArtDemo2026!'})
+        cookie = headers['Set-Cookie'].split(';')[0]
+        def chunk(kind, value):
+            return struct.pack('>I',len(value))+kind+value+struct.pack('>I',zlib.crc32(kind+value)&0xffffffff)
+        for pixels in (b'', b'\x00\xff', b'\x05\xff\x00\x00', b'\x00\xff\x00\x00extra'):
+            raw = b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',1,1,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(pixels))+chunk(b'IEND',b'')
+            status, _, response = self.request('/api?action=upload', {'kind':'art','image':'data:image/png;base64,'+base64.b64encode(raw).decode()},cookie)
+            self.assertEqual(status,400)
+            self.assertTrue(json.loads(response)['error'])
+            self.assertNotIn(b'Traceback',response)
+
+    def test_checkout_tampering_and_foreign_order_over_http(self):
+        _, headers, _ = self.request('/api?action=login', {'email':'customer@demo.local','password':'ArtDemo2026!'})
+        buyer = headers['Set-Cookie'].split(';')[0]
+        _, headers, _ = self.request('/api?action=login', {'email':'artist@demo.local','password':'ArtDemo2026!'})
+        other = headers['Set-Cookie'].split(';')[0]
+        address = {'name':'Test Buyer','phone':'0812345678','line':'123 Test Road','district':'เมือง','province':'ขอนแก่น','postal':'40000'}
+        base = {'items':['art-2'],'key':'http-tamper-order','address':address,'code':'ART10','total':1,'price':1,'discount':999999,'status':'completed','user_id':'admin'}
+        for invalid in ([], ['art-2','art-2'], ['missing-art'], [None], 'art-2'):
+            status, _, raw = self.request('/api?action=order_create', base | {'items':invalid},buyer)
+            self.assertIn(status,(400,404))
+            self.assertNotIn(b'Traceback',raw)
+        status, _, raw = self.request('/api?action=order_create',base,buyer)
+        self.assertEqual(status,200)
+        order = json.loads(raw)['order']
+        self.assertEqual((order['total'],order['status'],order['user_id']),(10400,'pending_payment','customer'))
+        self.assertEqual(self.request('/api?action=order&id='+order['id'],cookie=other)[0],404)
+        self.assertEqual(self.request('/api?action=order_status',{'id':order['id'],'status':'paid'},buyer)[0],403)
+        self.assertEqual(self.request('/api?action=order_status',{'id':order['id'],'status':'cancelled'},other)[0],404)
+        self.assertEqual(self.request('/api?action=order_create',base | {'key':'http-second-buyer'},buyer)[0],409)
+        self.assertEqual(self.request('/api?action=order_status',{'id':order['id'],'status':'cancelled'},buyer)[0],200)
 
 
 if __name__ == "__main__":

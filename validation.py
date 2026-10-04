@@ -73,6 +73,31 @@ def address(value):
     return result
 
 
+def png_rows(decoded, width, height, depth, color, interlace):
+    """Validate scanline lengths and filters, including PNG's Adam7 passes."""
+    channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}
+    depths = {0: (1, 2, 4, 8, 16), 2: (8, 16), 3: (1, 2, 4, 8), 4: (8, 16), 6: (8, 16)}
+    if color not in channels or depth not in depths[color] or interlace not in (0, 1):
+        raise ValueError()
+    passes = ((0, 0, 1, 1),) if interlace == 0 else ((0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2))
+    offset = 0
+    for x, y, dx, dy in passes:
+        columns = max(0, (width - x + dx - 1) // dx)
+        rows = max(0, (height - y + dy - 1) // dy)
+        if not columns or not rows:
+            continue
+        stride = 1 + (columns * channels[color] * depth + 7) // 8
+        if offset + stride * rows > len(decoded):
+            raise ValueError()
+        for row in range(rows):
+            if decoded[offset + row * stride] > 4:
+                raise ValueError()
+        offset += stride * rows
+    if offset != len(decoded):
+        raise ValueError()
+    return True
+
+
 def image_payload(value, max_bytes=500000, max_pixels=4000000):
     """Validate PNG/JPEG bytes; no trusting filenames, MIME labels or SVG."""
     try:
@@ -82,9 +107,10 @@ def image_payload(value, max_bytes=500000, max_pixels=4000000):
             raise AppError("รองรับเฉพาะรูป PNG หรือ JPG", field="รูปภาพ")
         content = base64.b64decode(encoded, validate=True)
         if len(content) > max_bytes:
-            raise AppError("รูปต้องไม่เกิน 500 KB กรุณาเลือกรูปขนาดเล็กลง", field="รูปภาพ")
+            raise AppError(f"รูปต้องไม่เกิน {max_bytes // 1000} KB กรุณาเลือกรูปขนาดเล็กลง", field="รูปภาพ")
         if content.startswith(b"\x89PNG\r\n\x1a\n"):
             offset, width, height, ended, image_data = 8, 0, 0, False, bytearray()
+            header, palette, seen_data, data_closed = False, False, False, False
             while offset + 12 <= len(content):
                 size = struct.unpack(">I", content[offset:offset + 4])[0]
                 kind = content[offset + 4:offset + 8]
@@ -94,16 +120,36 @@ def image_payload(value, max_bytes=500000, max_pixels=4000000):
                     raise ValueError()
                 if kind == b"IHDR" and offset == 8 and size == 13:
                     width, height = struct.unpack(">II", chunk[:8])
+                    depth, color, compression, filtering, interlace = chunk[8:]
+                    if width <= 0 or height <= 0 or width * height > max_pixels or compression != 0 or filtering != 0:
+                        raise ValueError()
+                    header = True
+                elif not header or kind == b"IHDR":
+                    raise ValueError()
+                elif kind == b"PLTE":
+                    if seen_data or palette or not size or size % 3 or size > 768:
+                        raise ValueError()
+                    palette = True
                 elif kind == b"IDAT":
+                    if data_closed:
+                        raise ValueError()
+                    seen_data = True
                     image_data.extend(chunk)
                 elif kind == b"IEND" and size == 0:
                     ended = end == len(content)
                     break
+                else:
+                    if seen_data:
+                        data_closed = True
+                    # Unknown critical chunks cannot be decoded safely.
+                    if not kind or kind[0] & 32 == 0:
+                        raise ValueError()
                 offset = end
             decoder = zlib.decompressobj()
-            decoded = decoder.decompress(bytes(image_data), max_pixels * 8 + 1)
-            if not ended or not decoder.eof or len(decoded) > max_pixels * 8:
+            decoded = decoder.decompress(bytes(image_data), max_pixels * 9 + 1)
+            if not ended or not seen_data or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail or len(decoded) > max_pixels * 9 or (color == 3 and not palette):
                 raise ValueError()
+            png_rows(decoded, width, height, depth, color, interlace)
             mime = "image/png"
         elif content.startswith(b"\xff\xd8") and content.endswith(b"\xff\xd9"):
             width, height, offset, scan = 0, 0, 2, False
