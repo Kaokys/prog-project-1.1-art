@@ -11,7 +11,7 @@ import unittest
 import zlib
 from pathlib import Path
 from unittest.mock import patch
-from marketplace import Marketplace, calculate_total
+from marketplace import Marketplace, calculate_total, paginate
 from storage import Storage, StorageError
 from validation import AppError, boolean, image_payload, money, number
 
@@ -225,6 +225,46 @@ class MarketplaceTests(unittest.TestCase):
         saved = self.app.write("address_save", {"address": self.address}, self.customer)["addresses"][0]
         self.fails(404, lambda: self.app.write("address_delete", {"id": saved["id"]}, self.artist))
         self.app.write("address_delete", {"id": saved["id"]}, self.customer)
+
+    def test_profile_artist_application_only_customer_and_validation_atomic(self):
+        for token in (self.artist, self.admin):
+            before, _ = self.storage.load()
+            self.fails(409, lambda: self.app.write("profile_save", {"name": "Must not persist", "artist_requested": True}, token))
+            self.assertEqual(self.storage.load()[0], before)
+        self.app.write("profile_save", {"name": "Requesting buyer", "artist_requested": True}, self.customer)
+        self.assertTrue(self.app.read("profile", token=self.customer)["artist_requested"])
+        for body in ({"name": " ", "bio": "Valid"}, {"name": "Valid", "bio": 10}, {"name": "Valid", "artist_requested": "true"}):
+            before, _ = self.storage.load()
+            self.fails(400, lambda: self.app.write("profile_save", body, self.customer))
+            self.assertEqual(self.storage.load()[0], before)
+
+    def test_expired_session_and_role_change_require_login(self):
+        from auth import token_key
+        self.storage.update(lambda d: d["sessions"][token_key(self.customer)].update(expires=0))
+        self.fails(401, lambda: self.app.read("profile", token=self.customer))
+        self.assertIsNone(self.app.read("bootstrap", token=self.customer)["user"])
+        self.customer = self.login("customer@demo.local")
+        profile = self.app.read("profile", token=self.customer)["user"]
+        self.app.write("user_update", profile | {"role": "artist"}, self.admin)
+        self.fails(401, lambda: self.app.read("profile", token=self.customer))
+        self.assertEqual(self.app.read("profile", token=self.login(profile["email"]))["user"]["role"], "artist")
+
+    def test_pagination_recovers_when_last_page_is_deleted(self):
+        self.assertEqual(paginate(["remaining"], {"page": 2, "limit": 1}), {"items": ["remaining"], "page": 1, "limit": 1, "total": 1})
+        self.assertEqual(paginate([], {"page": 5})["page"], 1)
+        self.fails(400, lambda: paginate([], {"page": "bad"}))
+
+    def test_artist_catalogue_more_than_thirty_works(self):
+        def add(data):
+            model = data["artworks"][0]
+            for index in range(28):
+                data["artworks"].append(dict(model, id="page-fixture-" + str(index)))
+        self.storage.update(add)
+        pages = [self.app.read("catalogue", {"artist": "blue", "limit": 9, "page": page}) for page in range(1, 5)]
+        ids = [a["id"] for page in pages for a in page["items"]]
+        self.assertEqual(len(ids), 31)
+        self.assertEqual(len(set(ids)), 31)
+        self.assertEqual(len(pages[-1]["items"]), 4)
 
     def test_file_failure_preserves_database(self):
         with patch("storage.os.replace", side_effect=OSError()):

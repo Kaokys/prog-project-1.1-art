@@ -33,6 +33,7 @@ def audit(data, user, action, entity, item_id):
 def paginate(items, query):
     page = number(query.get("page", 1), "หน้า", 1, 100000, True)
     limit = number(query.get("limit", 9), "จำนวนต่อหน้า", 1, 30, True)
+    page = min(page, max(1, (len(items) + limit - 1) // limit))
     start = (page - 1) * limit
     return {"items": items[start:start + limit], "total": len(items), "page": page, "limit": limit}
 
@@ -230,11 +231,14 @@ class Marketplace:
                 return {"ok": True}
             user = current_user(data, token)
             if action == "profile_save":
+                requested = boolean(body.get("artist_requested", False))
+                if requested and user["role"] != "customer":
+                    raise AppError("บัญชีนี้มีสิทธิ์ศิลปินหรือแอดมินอยู่แล้ว ไม่ต้องส่งคำขอ", 409)
                 user["name"] = text(body.get("name"), "ชื่อ", 2, 100)
                 user["bio"] = text(body.get("bio", ""), "ประวัติ", 0, 1000)
                 if body.get("avatar") and body["avatar"] != user["avatar"]:
                     user["avatar"] = image_owned(data, body["avatar"], user, "avatar")
-                user["artist_requested"] = boolean(body.get("artist_requested", False))
+                user["artist_requested"] = requested
                 audit(data, user, "update", "profile", user["id"])
                 return {"user": public_user(user)}
             if action in ("address_save", "address_delete"):
