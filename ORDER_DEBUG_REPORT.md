@@ -49,6 +49,11 @@
 - HTTP journey บน localhost ข้อมูลแยก: ส่งผลงาน → ปฏิเสธ → แก้ → อนุมัติ → ซื้อ → ปฏิเสธสลิป → ส่งใหม่ → ชำระ → จัดส่ง → สำเร็จ → ตรวจ Dashboard/log ผ่าน
 - Browser: ตรวจหน้าแอดมินทุกเมนู; customer orders/payment/cart; artist manage/upload/earnings/profile/orders; รีเฟรช session/ตะกร้า/ฟอร์ม; ค้นชื่อศิลปินร่วมกับช่วงราคาและการเรียง; ล้างผ่านเมนูมาใหม่
 - ออร์เดอร์และไฟล์ที่ใช้เปลี่ยนสถานะระหว่างทดสอบอยู่ใน `evidence/order-debug-data` แยกจากข้อมูลจริง
+- Vercel หลัง deploy: เปิดรายการและรายละเอียดออร์เดอร์แอดมินได้ เมนูภาพรวมร้านคงอยู่ ไม่มีฟอร์มส่งสลิปในออร์เดอร์ลูกค้า; API ส่งแทนได้รับ 403 และออร์เดอร์ก่อน/หลังตรงกัน
+- Vercel: ตัวกรองผิดได้รับ 400; ช่วงราคา 30–150 บาทรวมขอบราคาและเรียงต่ำไปสูงถูกต้อง
+- GitHub: อ่านไฟล์จาก commit เดียวกัน ตรวจครบ **6 บัญชี** ว่า purchases ตรงกับ user_id ใน database.txt และ profile เก็บ password_hash ไม่เก็บรหัสผ่านดิบ
+- Browser: Back/Forward ผ่าน; ไม่พบ JavaScript console errors ในแท็บทดสอบ; ตรวจภาพมือถือ 390 px และคืน viewport เดิมแล้ว
+- ภาพหลังแก้: `evidence/admin-orders-after.png` (การ์ดและเมนูถูกต้อง), `evidence/admin-payment-after.png` (รายละเอียดออร์เดอร์)
 
 ## ขอบเขตหลักฐาน
 
