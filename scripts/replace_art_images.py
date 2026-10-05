@@ -8,6 +8,29 @@ import zlib
 from pathlib import Path
 from urllib.request import urlopen
 
+# Leave space beneath the hosted function response limit.
+MAX_DOWNLOAD_BYTES = 4_000_000
+
+
+def download_original(asset, root):
+    cache = root / "evidence" / "open-art-originals" / asset["filename"]
+    if not cache.exists():
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        with urlopen(asset["digital_original_url"], timeout=60) as response:
+            raw = response.read(8000001)
+        if not raw.startswith(b"\xff\xd8") or not raw.endswith(b"\xff\xd9") or len(raw) > 8000000:
+            raise ValueError("Original is not a supported JPEG")
+        cache.write_bytes(raw)
+    raw = cache.read_bytes()
+    source = asset["digital_original_url"]
+    if len(raw) > MAX_DOWNLOAD_BYTES:
+        # Use the museum's unchanged smaller JPEG when the full one cannot be served.
+        raw = (root / "public/assets" / asset["filename"]).read_bytes()
+        source = asset["original_url"]
+    if not raw.startswith(b"\xff\xd8") or not raw.endswith(b"\xff\xd9") or len(raw) > MAX_DOWNLOAD_BYTES:
+        raise ValueError("Download exceeds the supported JPEG size")
+    return raw, source
+
 
 def asset_for(art_id, assets):
     if art_id.startswith("art-") and art_id[4:].isdigit():
@@ -72,17 +95,11 @@ def prepare_originals(store, data, assets, root):
             continue
         old = data["media"][url.split("id=")[-1]]
         asset = asset_for(art["id"], assets)
-        if old.get("source_url") == asset["source_url"] and old.get("license") == asset["license"]:
+        raw, source = download_original(asset, root)
+        digest = hashlib.sha256(raw).hexdigest()
+        if (old.get("source_url") == asset["source_url"] and old.get("license") == asset["license"]
+                and old.get("sha256") == digest):
             continue
-        cache = root / "evidence" / "open-art-originals" / asset["filename"]
-        if not cache.exists():
-            cache.parent.mkdir(parents=True, exist_ok=True)
-            with urlopen(asset["digital_original_url"], timeout=60) as response:
-                raw = response.read(8000001)
-            if not raw.startswith(b"\xff\xd8") or not raw.endswith(b"\xff\xd9") or len(raw) > 8000000:
-                raise ValueError("Original is not a supported JPEG")
-            cache.write_bytes(raw)
-        raw = cache.read_bytes()
         records, parts = {}, []
         for offset in range(0, len(raw), 400000):
             media_id = secrets.token_hex(16)
@@ -92,7 +109,7 @@ def prepare_originals(store, data, assets, root):
         original_id = secrets.token_hex(16)
         records[original_id] = {"owner": old["owner"], "kind": "original", "mime": "image/jpeg", "parts": parts,
                                 "license": asset["license"], "source_url": asset["source_url"],
-                                "sha256": hashlib.sha256(raw).hexdigest()}
+                                "sha256": digest, "byte_length": len(raw), "download_source_url": source}
         replacements[url] = {"url": "/api?action=media&id=" + original_id, "records": records}
     return replacements
 
