@@ -4,10 +4,37 @@ import unittest
 import tempfile
 from pathlib import Path
 from seed import new_data
-from scripts.replace_art_images import MAX_DOWNLOAD_BYTES, download_original, migrate
+from scripts.replace_art_images import MAX_DOWNLOAD_BYTES, asset_for, download_original, migrate, restore_unrelated_images
 
 
 class ArtImageMigrationTests(unittest.TestCase):
+    def test_scope_keeps_other_images_and_restoration_preserves_later_edits(self):
+        assets = json.loads((Path(__file__).resolve().parents[1] / "public/assets/attributions.json").read_text(encoding="utf-8"))
+        baseline = new_data()
+        baseline["artworks"][1]["image"] = "/assets/art-2.jpg"
+        item = {k: baseline["artworks"][1][k] for k in ("id", "image", "price")}
+        baseline["orders"] = [{"id": "order", "items": [item], "status": "paid", "total": 6000}]
+        data = copy.deepcopy(baseline)
+        untouched = copy.deepcopy(data["artworks"][1])
+        migrate(data, assets, {})
+        self.assertEqual(data["artworks"][1], untouched)
+        self.assertEqual(data["orders"], baseline["orders"])
+        asset = asset_for("art-2", assets)
+        data["artworks"][1].update(image="/assets/" + asset["filename"], source_url=asset["source_url"], license="CC0", price=9999)
+        data["orders"][0]["items"][0]["image"] = "/assets/" + asset["filename"]
+        accounts = copy.deepcopy(data["users"])
+        self.assertEqual(restore_unrelated_images(data, baseline, assets), 1)
+        self.assertEqual(data["artworks"][1]["image"], "/assets/meme-art-2.jpg")
+        self.assertEqual(data["artworks"][1]["price"], 9999)
+        self.assertEqual(data["artworks"][0]["image"], "/assets/open-art-1.jpg")
+        self.assertEqual(data["users"], accounts)
+        self.assertEqual(data["orders"][0]["total"], 6000)
+        self.assertEqual(data["orders"][0]["items"][0]["image"], "/assets/meme-art-2.jpg")
+        self.assertEqual(restore_unrelated_images(data, baseline, assets), 0)
+        data["artworks"][1].update(image="/my-new-image.jpg", source_url=asset["source_url"])
+        self.assertEqual(restore_unrelated_images(data, baseline, assets), 0)
+        self.assertEqual(data["artworks"][1]["image"], "/my-new-image.jpg")
+
     def test_oversized_museum_original_uses_unchanged_smaller_jpeg(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

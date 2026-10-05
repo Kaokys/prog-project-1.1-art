@@ -82,7 +82,7 @@ python scripts/check_rubric.py
 
 โค้ดหลัก: main.py เมนู, marketplace.py กฎธุรกิจ, validation.py ตรวจข้อมูล, auth.py สิทธิ์/session, storage.py ไฟล์ text, user_files.py ไฟล์รายผู้ใช้, server.py เว็บในเครื่อง, api/index.py เว็บ Vercel
 
-ภาพผลงานและโปสเตอร์ใช้ภาพศิลปะ Public Domain / CC0 จาก The Metropolitan Museum of Art แหล่งต้นทาง ศิลปินผู้สร้างภาพ และ license อยู่ public/assets/attributions.json ชื่อรายการและบัญชีศิลปินเป็นข้อมูลสาธิตเดิม รูปโปรไฟล์ศิลปินคงเดิมตามขอบเขตผู้ใช้
+เฉพาะผลงานและโปสเตอร์ที่เดิมเป็นภาพ Netanyahu ใช้ภาพศิลปะ Public Domain / CC0 จาก The Metropolitan Museum of Art แหล่งต้นทางอยู่ public/assets/attributions.json ส่วนภาพ Ben 10 / Gwen ใช้ภาพสาธิตเดิมจาก Tenor แหล่งที่มาอยู่ public/assets/meme-attributions.json ไม่ได้ระบุเป็น CC0 ภาพอัปโหลดอื่น ชื่อรายการ บัญชี และรูปโปรไฟล์ศิลปินคงเดิมตามขอบเขตผู้ใช้
 
 หน้าชำระเงินมี QR สาธิต ยอดรวม สถานะ ช่องลากสลิป JPG/PNG มาวางหรือเลือกไฟล์ ดูตัวอย่างและนำไฟล์ออกได้ ตรวจรูป/ขนาดก่อนเปิดปุ่มส่ง และตรวจซ้ำฝั่งเซิร์ฟเวอร์ แอดมินปฏิเสธหรือยืนยันสลิป จัดส่ง และปิดคำสั่งซื้อได้ แอดมินลบผู้ใช้แบบปิดบัญชี/เก็บประวัติ ยกเลิก session และป้องกันลบบัญชีตัวเอง
 

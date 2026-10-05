@@ -1,0 +1,41 @@
+[
+  {
+    "id": 2,
+    "title": "Ben 10 Stare",
+    "color": "green",
+    "artist": "Rellxtra",
+    "filename": "meme-art-2.jpg",
+    "license": "ภาพจาก Tenor ใช้สาธิตระบบ ไม่ได้อ้างสิทธิ์ในภาพ",
+    "source_url": "https://tenor.com/vi/view/ben-10-ben-10-stare-gif-15409871389790827857",
+    "original_url": "https://media1.tenor.com/m/1drcYk7v9VEAAAAC/ben-10-ben-10-stare.gif",
+    "width": 308,
+    "height": 308,
+    "sha256": "3a99bf15caa4862bdc811f0b67160a64e13e4f2fa1ccdd607bcf0fce6b0ebc62"
+  },
+  {
+    "id": 4,
+    "title": "Ben 10 Confused",
+    "color": "green",
+    "artist": "CartoonNetworkLA",
+    "filename": "meme-art-4.jpg",
+    "license": "ภาพจาก Tenor ใช้สาธิตระบบ ไม่ได้อ้างสิทธิ์ในภาพ",
+    "source_url": "https://tenor.com/view/desconcertado-ben-ben10-parpadear-confundido-gif-24148949",
+    "original_url": "https://media1.tenor.com/m/7QE2sWWRFnwAAAAC/desconcertado-ben.gif",
+    "width": 498,
+    "height": 280,
+    "sha256": "498c54df832ff08f1bfee5c1bcb0f0e1f21b5388b8a65b618b06f1d70d0fd03a"
+  },
+  {
+    "id": 6,
+    "title": "Gwen Huh?",
+    "color": "green",
+    "artist": "CartoonNetworkLA",
+    "filename": "meme-art-6.jpg",
+    "license": "ภาพจาก Tenor ใช้สาธิตระบบ ไม่ได้อ้างสิทธิ์ในภาพ",
+    "source_url": "https://tenor.com/es-419/view/huh-gwen-tennyson-ben10-what-confused-gif-16313460",
+    "original_url": "https://media1.tenor.com/m/5npmvdz2yFQAAAAC/huh-gwen-tennyson.gif",
+    "width": 498,
+    "height": 280,
+    "sha256": "045ed40c2090761e8c84c007d39637d080aa909ee26215682a0bdea310e6f6d6"
+  }
+]

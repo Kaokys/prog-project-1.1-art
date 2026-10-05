@@ -10,6 +10,48 @@ from urllib.request import urlopen
 
 # Leave space beneath the hosted function response limit.
 MAX_DOWNLOAD_BYTES = 4_000_000
+NETANYAHU_ART_IDS = {"art-1", "art-3", "art-5", "8bf1e80aefd6dbd6f042c0b581bde440"}
+
+
+def restore_unrelated_images(data, baseline, assets):
+    """Undo only this migration's image changes on non-Netanyahu artworks."""
+    from marketplace import audit
+    previous = {art["id"]: art for art in baseline["artworks"]}
+    snapshots = {(order["id"], item["id"]): item for order in baseline["orders"] for item in order["items"]}
+    admin = next(user for user in data["users"] if user["id"] == "admin")
+    restored = 0
+    fields = ("image", "original", "watermarked", "credit", "source_url", "source_title", "license")
+    for art in data["artworks"]:
+        old = previous.get(art["id"])
+        if old is None or art["id"] in NETANYAHU_ART_IDS:
+            continue
+        asset = asset_for(art["id"], assets)
+        if art.get("image") != "/assets/" + asset["filename"] or art.get("source_url") != asset["source_url"]:
+            continue  # Keep images the user changed after the migration.
+        for field in fields:
+            if field in old:
+                value = old[field]
+                if field == "image" and art["id"] in {"art-2", "art-4", "art-6"}:
+                    value = "/assets/meme-" + art["id"] + ".jpg"
+                art[field] = value
+            else:
+                art.pop(field, None)
+        audit(data, admin, "restore_unrelated_image", "artwork", art["id"])
+        restored += 1
+    for order in data["orders"]:
+        for item in order["items"]:
+            old = snapshots.get((order["id"], item["id"]), previous.get(item["id"]))
+            if old is None or item["id"] in NETANYAHU_ART_IDS:
+                continue
+            asset = asset_for(item["id"], assets)
+            if item.get("image") != "/assets/" + asset["filename"]:
+                continue
+            item["image"] = ("/assets/meme-" + item["id"] + ".jpg"
+                             if item["id"] in {"art-2", "art-4", "art-6"} else old["image"])
+            if item.get("original") and old.get("original"):
+                item["original"] = old["original"]
+            audit(data, admin, "restore_unrelated_image", "order", order["id"])
+    return restored
 
 
 def download_original(asset, root):
@@ -47,6 +89,8 @@ def migrate(data, assets, originals):
     admin = next(user for user in data["users"] if user["id"] == "admin")
     updated = {}
     for art in data["artworks"]:
+        if art["id"] not in NETANYAHU_ART_IDS:
+            continue
         asset = asset_for(art["id"], assets)
         replacement = {"image": "/assets/" + asset["filename"], "watermarked": False,
                        "credit": asset["artist"], "source_url": asset["source_url"],
@@ -71,7 +115,7 @@ def migrate(data, assets, originals):
         if old["items"] != order["items"]:
             audit(data, admin, "replace_cc0_image", "order", order["id"])
     poster = "/assets/" + assets[0]["filename"]
-    if data["settings"]["poster"] != poster:
+    if data["settings"]["poster"] in ("/assets/art-1.jpg", poster) and data["settings"]["poster"] != poster:
         data["settings"]["poster"] = poster
         audit(data, admin, "replace_cc0_image", "settings", "poster")
     # Only image-related snapshot fields may change. Financial/history fields stay exact.
@@ -90,6 +134,8 @@ def prepare_originals(store, data, assets, root):
     replacements = {}
     references = data["artworks"] + [item for order in data["orders"] for item in order["items"]]
     for art in references:
+        if art["id"] not in NETANYAHU_ART_IDS:
+            continue
         url = art.get("original")
         if not url or url in replacements:
             continue
@@ -133,8 +179,15 @@ def main():
             backup = root / "evidence" / ("before-cc0-" + label + ".json")
             if not backup.exists():
                 backup.write_text(json.dumps(before, ensure_ascii=False), encoding="utf-8")
+            baseline = json.loads(backup.read_text(encoding="utf-8"))
+            restore_unrelated_images(before, baseline, assets)
             originals = prepare_originals(store, before, assets, root)
-            result = store.update(lambda data: migrate(data, assets, originals))
+            def apply_images(data):
+                restored = restore_unrelated_images(data, baseline, assets)
+                result = migrate(data, assets, originals)
+                result["unrelated_images_restored"] = restored
+                return result
+            result = store.update(apply_images)
             current, _ = store.load()
             if before["users"] != current["users"]:
                 raise ValueError("Accounts changed")

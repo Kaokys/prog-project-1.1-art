@@ -15,11 +15,12 @@ def new_data():
     titles = ("Benjamin Approves", "Ben 10 Stare", "Big Yahu Dance", "Ben 10 Confused", "Tel Aviv Impressed", "Gwen Huh?")
     # Keep seed metadata with Python code: public files are served separately
     # by Vercel and are not guaranteed to be in the function filesystem.
-    credits = (('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436535'), ('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436524'), ('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436528'), ('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436534'), ('Paul Cézanne', 'https://www.metmuseum.org/art/collection/search/435882'), ('Paul Cézanne', 'https://www.metmuseum.org/art/collection/search/435871'))
+    credits = (('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436535'), ('Rellxtra', 'https://tenor.com/vi/view/ben-10-ben-10-stare-gif-15409871389790827857'), ('Vincent van Gogh', 'https://www.metmuseum.org/art/collection/search/436528'), ('CartoonNetworkLA', 'https://tenor.com/view/desconcertado-ben-ben10-parpadear-confundido-gif-24148949'), ('Paul Cézanne', 'https://www.metmuseum.org/art/collection/search/435882'), ('CartoonNetworkLA', 'https://tenor.com/es-419/view/huh-gwen-tennyson-ben10-what-confused-gif-16313460'))
     artworks = [{"id": f"art-{i + 1}", "artist_id": "blue" if i % 2 == 0 else "green", "title": title,
                  "description": "ผลงานมีมสำหรับสาธิตระบบซื้อขายในชั้นเรียน ไม่ใช่สินค้าจริง",
                  "category": "งานศิลปะ", "technique": "ภาพนิ่งจาก GIF", "width": 60.0, "height": 60.0,
-                 "price": (i + 1) * 3000, "image": f"/assets/open-art-{i + 1}.jpg", "license": "CC0 1.0 / Public Domain", "status": "approved", "deleted": False,
+                 "price": (i + 1) * 3000, "image": (f"/assets/open-art-{i + 1}.jpg" if i % 2 == 0 else f"/assets/meme-art-{i + 1}.jpg"),
+                 "license": "CC0 1.0 / Public Domain" if i % 2 == 0 else "ภาพจาก Tenor ใช้สาธิตระบบ ไม่ได้อ้างสิทธิ์ในภาพ", "status": "approved", "deleted": False,
                  "credit": credits[i][0], "source_url": credits[i][1]}
                 for i, title in enumerate(titles)]
     return {"version": 1, "users": users, "sessions": {}, "artworks": artworks, "orders": [], "media": {},
