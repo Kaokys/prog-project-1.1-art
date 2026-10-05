@@ -33,7 +33,7 @@ class TextStorageTests(unittest.TestCase):
         with patch("pathlib.Path.open", side_effect=OSError("Public files absent")):
             data = new_data()
         self.assertEqual(len(data["artworks"]), 6)
-        self.assertEqual(data["artworks"][0]["credit"], "TheBigBlue892")
+        self.assertEqual(data["artworks"][0]["credit"], "Vincent van Gogh")
 
     def test_migrates_existing_json_without_resetting_records_or_logs(self):
         with tempfile.TemporaryDirectory() as directory:
